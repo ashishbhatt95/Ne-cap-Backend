@@ -10,8 +10,12 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+const vehicleCategoryRoutes = require("./routes/vehicleCategory");
+
 // Routes
 app.use("/api/passenger", passengerRoutes);
+app.use("/api/vehicle-category", vehicleCategoryRoutes);
+
 
 const riderRoutes = require("./routes/riderRoutes");
 app.use("/api/rider", riderRoutes);
