@@ -16,5 +16,8 @@ router.post(
 
 // Step 2: Verify OTP
 router.post("/verify-otp", riderController.verifyRiderOtp);
+router.post("/resend-otp", riderController.resendOtp);
+
+
 
 module.exports = router;

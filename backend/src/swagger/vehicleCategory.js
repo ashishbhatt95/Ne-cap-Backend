@@ -18,18 +18,18 @@
  *           schema:
  *             type: object
  *             properties:
- *               name: { type: string, example: "Sedan" }
- *               type: { type: string, example: "Car" }
- *               minPricePerKm: { type: number, example: 10 }
+ *               name: { type: string, example: "Swift Dzire" }
+ *               type: { type: string, example: "Sedan" }
+ *               minPricePerKm: { type: number, example: 12 }
  *               fuelType: { type: string, example: "Petrol" }
- *               capacity: { type: number, example: 4 }
+ *               personCapacity: { type: number, example: 4 }
  *               acType: { type: string, example: "AC" }
  *               image: { type: string, format: binary }
  *     responses:
- *       200:
+ *       201:
  *         description: Vehicle category added successfully
  *       400:
- *         description: Missing required fields
+ *         description: Missing required fields or image upload failed
  */
 
 /**
@@ -87,7 +87,7 @@
  *               type: { type: string }
  *               minPricePerKm: { type: number }
  *               fuelType: { type: string }
- *               capacity: { type: number }
+ *               personCapacity: { type: number }
  *               acType: { type: string }
  *               image: { type: string, format: binary }
  *     responses:

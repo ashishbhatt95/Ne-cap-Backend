@@ -53,7 +53,7 @@ exports.registerRider = async (req, res) => {
     const otp = "123456"; // static OTP for testing
     await Otp.create({ mobile: mobileStr, otp });
 
-    return res.json({ success: true, message: "OTP sent successfully (use 123456 for testing)", riderId: existing._id });
+    return res.json({ success: true, message: "OTP sent successfully (use 123456 for testing)"});
   } catch (err) {
     console.error("registerRider error:", err);
     res.status(500).json({ success: false, message: err.message });
