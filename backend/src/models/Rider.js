@@ -7,7 +7,7 @@ const RiderSchema = new mongoose.Schema(
     fatherName: String,
     motherName: String,
     email: String,
-    mobile: { type: String, required: true },
+    mobile: { type: String, required: true, unique: true },
     aadharNumber: String,
     panNumber: String,
     address: String,
@@ -15,6 +15,13 @@ const RiderSchema = new mongoose.Schema(
     aadharBack: String,
     selfie: String,
     otpVerified: { type: Boolean, default: false },
+    isSubmitted: { type: Boolean, default: false }, // rider submitted registration
+    isApproved: { type: Boolean, default: false }, // admin approval
+
+    // Reviews simplified: only numbers
+    reviews: [Number], // array of rating numbers
+    reviewCount: { type: Number, default: 0 },
+    averageRating: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
