@@ -33,6 +33,11 @@
  *     responses:
  *       200:
  *         description: Rider registration initiated (OTP sent)
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: "OTP sent successfully (use 123456 for testing)"
  *       400:
  *         description: Missing or invalid fields
  */
@@ -156,7 +161,7 @@
 /**
  * @swagger
  * /api/rider/{id}/approve:
- *   post:
+ *   put:
  *     summary: Admin approves rider registration
  *     tags: [Rider]
  *     parameters:
@@ -176,7 +181,7 @@
 /**
  * @swagger
  * /api/rider/{id}/reject:
- *   post:
+ *   put:
  *     summary: Admin rejects rider registration
  *     tags: [Rider]
  *     parameters:
