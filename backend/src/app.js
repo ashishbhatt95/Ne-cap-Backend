@@ -15,7 +15,8 @@ const vehicleCategoryRoutes = require("./routes/vehicleCategory");
 // Routes
 app.use("/api/passenger", passengerRoutes);
 app.use("/api/vehicle-category", vehicleCategoryRoutes);
-
+const vehicleRoutes = require("./routes/vehicle");
+app.use("/api/vehicle", vehicleRoutes);
 
 const riderRoutes = require("./routes/riderRoutes");
 app.use("/api/rider", riderRoutes);
