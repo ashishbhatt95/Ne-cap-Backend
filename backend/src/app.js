@@ -19,6 +19,8 @@ app.use("/api/rider", riderRoutes);
 // Root endpoint
 app.get("/", (req, res) => res.send("🚖 NE Cab Backend API Running..."));
 
+app.get("/favicon.ico", (req, res) => res.status(204));
+
 // 404 handler
 app.use((req, res, next) => {
   const error = new Error(`Route not found: ${req.originalUrl}`);
