@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const passengerRoutes = require("./routes/passengerRoutes");
+const swaggerDocs = require("../src/swagger/index");
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use("/api/passenger", passengerRoutes);
 const riderRoutes = require("./routes/riderRoutes");
 app.use("/api/rider", riderRoutes);
 
+swaggerDocs(app);
 
 // Root endpoint
 app.get("/", (req, res) => res.send("🚖 NE Cab Backend API Running..."));
