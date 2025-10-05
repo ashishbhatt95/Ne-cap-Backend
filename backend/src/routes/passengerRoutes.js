@@ -1,47 +1,26 @@
 const express = require("express");
 const router = express.Router();
-const multer = require("multer");
-const upload = multer(); // for handling multipart/form-data
-
 const {
-  registerRider,
-  verifyRiderOtp,
-  resendOtp,
-  getAllRiders,
-  getRiderById,
-  updateRider,
-  deleteRider,
-  approveRider,
-  rejectRider,
-  addReview,
-} = require("../controllers/riderController");
+  signupSendOtp,
+  verifyOtpAndRegister,
+  getAllPassengers,
+  getPassengerById,
+  updatePassenger,
+  deletePassenger,
+} = require("../controllers/passengerController");
 
-// Rider registration & OTP
+// -----------------------------
+// OTP Signup Routes
+// -----------------------------
+router.post("/signup/send-otp", signupSendOtp);
+router.post("/signup/verify-otp", verifyOtpAndRegister);
 
-// Step 1 — Register Rider + Send OTP
-router.post("/register", upload.fields([
-  { name: "aadharFront" },
-  { name: "aadharBack" },
-  { name: "selfie" },
-]), registerRider);
-
-// Step 2 — Verify OTP
-router.post("/verify-otp", verifyRiderOtp);
-
-// Resend OTP
-router.post("/resend-otp", resendOtp);
-
-// CRUD Operations
-router.get("/", getAllRiders);          // Get all riders
-router.get("/:id", getRiderById);      // Get single rider
-router.put("/:id", updateRider);       // Update rider
-router.delete("/:id", deleteRider);    // Delete rider
-
-// Admin Approve / Reject Rider
-router.post("/:id/approve", approveRider);
-router.post("/:id/reject", rejectRider);
-
-// Passenger Reviews
-router.post("/:riderId/review", addReview);
+// -----------------------------
+// Passenger CRUD Routes
+// -----------------------------
+router.get("/", getAllPassengers);           // Get all passengers
+router.get("/:id", getPassengerById);        // Get passenger by ID
+router.put("/:id", updatePassenger);         // Update passenger
+router.delete("/:id", deletePassenger);      // Delete passenger
 
 module.exports = router;

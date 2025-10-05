@@ -1,7 +1,9 @@
 const Passenger = require("../models/passengerSchema");
 const Otp = require("../models/Otp");
 
+// -----------------------------
 // STEP 1️⃣ — Send OTP (static 123456)
+// -----------------------------
 exports.signupSendOtp = async (req, res) => {
   try {
     const { name, email, dateOfBirth, mobile } = req.body;
@@ -48,7 +50,9 @@ exports.signupSendOtp = async (req, res) => {
   }
 };
 
+// -----------------------------
 // STEP 2️⃣ — Verify OTP & Register Passenger
+// -----------------------------
 exports.verifyOtpAndRegister = async (req, res) => {
   try {
     const { name, email, dateOfBirth, mobile, otp } = req.body;
@@ -92,7 +96,7 @@ exports.verifyOtpAndRegister = async (req, res) => {
       email,
       dateOfBirth,
       mobile,
-      role: "user", // always 'user'
+      role: "user",
     });
 
     await passenger.save();
@@ -108,5 +112,78 @@ exports.verifyOtpAndRegister = async (req, res) => {
       success: false,
       message: "Internal Server Error",
     });
+  }
+};
+
+// -----------------------------
+// GET ALL PASSENGERS
+// -----------------------------
+exports.getAllPassengers = async (req, res) => {
+  try {
+    const passengers = await Passenger.find();
+    return res.json({
+      success: true,
+      data: passengers,
+    });
+  } catch (error) {
+    console.error("getAllPassengers error:", error.message);
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+// -----------------------------
+// GET SINGLE PASSENGER BY ID
+// -----------------------------
+exports.getPassengerById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const passenger = await Passenger.findById(id);
+    if (!passenger) {
+      return res.status(404).json({ success: false, message: "Passenger not found" });
+    }
+    return res.json({ success: true, data: passenger });
+  } catch (error) {
+    console.error("getPassengerById error:", error.message);
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+// -----------------------------
+// UPDATE PASSENGER
+// -----------------------------
+exports.updatePassenger = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    const updatedPassenger = await Passenger.findByIdAndUpdate(id, updateData, {
+      new: true,
+    });
+
+    if (!updatedPassenger) {
+      return res.status(404).json({ success: false, message: "Passenger not found" });
+    }
+
+    return res.json({ success: true, data: updatedPassenger });
+  } catch (error) {
+    console.error("updatePassenger error:", error.message);
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+// -----------------------------
+// DELETE PASSENGER
+// -----------------------------
+exports.deletePassenger = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await Passenger.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: "Passenger not found" });
+    }
+    return res.json({ success: true, message: "Passenger deleted successfully" });
+  } catch (error) {
+    console.error("deletePassenger error:", error.message);
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
