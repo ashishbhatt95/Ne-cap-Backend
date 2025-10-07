@@ -8,19 +8,16 @@ const {
   updatePassenger,
   deletePassenger,
 } = require("../controllers/passengerController");
+const { verifyToken, allowRoles } = require("../middlewares/authMiddleware");
 
-// -----------------------------
-// OTP Signup Routes
-// -----------------------------
+// OTP Signup Routes (public)
 router.post("/signup/send-otp", signupSendOtp);
 router.post("/signup/verify-otp", verifyOtpAndRegister);
 
-// -----------------------------
-// Passenger CRUD Routes
-// -----------------------------
-router.get("/", getAllPassengers);           // Get all passengers
-router.get("/:id", getPassengerById);        // Get passenger by ID
-router.put("/:id", updatePassenger);         // Update passenger
-router.delete("/:id", deletePassenger);      // Delete passenger
+// Passenger CRUD Routes (protected - admin only)
+router.get("/", verifyToken, allowRoles("superadmin"), getAllPassengers);
+router.get("/:id", verifyToken, allowRoles("superadmin"), getPassengerById);
+router.put("/:id", verifyToken, allowRoles("superadmin"), updatePassenger);
+router.delete("/:id", verifyToken, allowRoles("superadmin"), deletePassenger);
 
 module.exports = router;

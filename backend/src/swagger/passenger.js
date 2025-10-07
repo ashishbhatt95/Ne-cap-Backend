@@ -11,12 +11,18 @@
  *   post:
  *     summary: Send OTP for passenger signup
  *     tags: [Passenger]
+ *     description: "Public endpoint, no JWT required"
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - dateOfBirth
+ *               - mobile
  *             properties:
  *               name: { type: string, example: "Rohit Sharma" }
  *               email: { type: string, example: "rohit@gmail.com" }
@@ -27,6 +33,8 @@
  *         description: OTP sent successfully
  *       400:
  *         description: Missing fields or already registered
+ *       500:
+ *         description: Internal Server Error
  */
 
 /**
@@ -35,12 +43,19 @@
  *   post:
  *     summary: Verify OTP and complete passenger registration
  *     tags: [Passenger]
+ *     description: "Public endpoint, no JWT required"
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - dateOfBirth
+ *               - mobile
+ *               - otp
  *             properties:
  *               name: { type: string, example: "Rohit Sharma" }
  *               email: { type: string, example: "rohit@gmail.com" }
@@ -52,6 +67,8 @@
  *         description: Passenger registered successfully
  *       400:
  *         description: Invalid OTP or already registered
+ *       500:
+ *         description: Internal Server Error
  */
 
 /**
@@ -60,9 +77,16 @@
  *   get:
  *     summary: Get all passengers
  *     tags: [Passenger]
+ *     security:
+ *       - BearerAuth: []
+ *     description: "Protected: accessible only by superadmin"
  *     responses:
  *       200:
  *         description: List of all passengers
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (role not allowed)
  *       500:
  *         description: Internal Server Error
  */
@@ -73,6 +97,9 @@
  *   get:
  *     summary: Get passenger by ID
  *     tags: [Passenger]
+ *     security:
+ *       - BearerAuth: []
+ *     description: "Protected: accessible only by superadmin"
  *     parameters:
  *       - in: path
  *         name: id
@@ -83,6 +110,10 @@
  *     responses:
  *       200:
  *         description: Passenger data
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (role not allowed)
  *       404:
  *         description: Passenger not found
  *       500:
@@ -95,6 +126,9 @@
  *   put:
  *     summary: Update passenger details
  *     tags: [Passenger]
+ *     security:
+ *       - BearerAuth: []
+ *     description: "Protected: accessible only by superadmin"
  *     parameters:
  *       - in: path
  *         name: id
@@ -116,6 +150,10 @@
  *     responses:
  *       200:
  *         description: Passenger updated successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (role not allowed)
  *       404:
  *         description: Passenger not found
  *       500:
@@ -128,6 +166,9 @@
  *   delete:
  *     summary: Delete passenger by ID
  *     tags: [Passenger]
+ *     security:
+ *       - BearerAuth: []
+ *     description: "Protected: accessible only by superadmin"
  *     parameters:
  *       - in: path
  *         name: id
@@ -138,6 +179,10 @@
  *     responses:
  *       200:
  *         description: Passenger deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (role not allowed)
  *       404:
  *         description: Passenger not found
  *       500:

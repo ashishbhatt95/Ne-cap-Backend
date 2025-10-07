@@ -2,12 +2,9 @@ const express = require("express");
 const router = express.Router();
 const riderController = require("../controllers/riderController");
 const upload = require("../middlewares/multer");
+const { verifyToken, allowRoles } = require("../middlewares/authMiddleware");
 
-// -----------------------------
-// OTP & Registration
-// -----------------------------
-
-// Step 1: Register Rider + Send OTP (with document upload)
+// OTP & Registration (public)
 router.post(
   "/register",
   upload.fields([
@@ -17,30 +14,20 @@ router.post(
   ]),
   riderController.registerRider
 );
-
-// Step 2: Verify OTP
 router.post("/verify-otp", riderController.verifyRiderOtp);
-
-// Resend OTP
 router.post("/resend-otp", riderController.resendOtp);
 
-// -----------------------------
-// CRUD Operations
-// -----------------------------
-router.get("/", riderController.getAllRiders);          // Get all riders
-router.get("/:id", riderController.getRiderById);      // Get rider by ID
-router.put("/:id", riderController.updateRider);       // Update rider
-router.delete("/:id", riderController.deleteRider);    // Delete rider
+// CRUD Operations (protected)
+router.get("/", verifyToken, allowRoles("superadmin"), riderController.getAllRiders);
+router.get("/:id", verifyToken, allowRoles("superadmin", "rider"), riderController.getRiderById);
+router.put("/:id", verifyToken, allowRoles("rider", "superadmin"), riderController.updateRider);
+router.delete("/:id", verifyToken, allowRoles("superadmin"), riderController.deleteRider);
 
-// -----------------------------
 // Admin Approve / Reject
-// -----------------------------
-router.put("/:id/approve", riderController.approveRider);
-router.put("/:id/reject", riderController.rejectRider);
+router.put("/:id/approve", verifyToken, allowRoles("superadmin"), riderController.approveRider);
+router.put("/:id/reject", verifyToken, allowRoles("superadmin"), riderController.rejectRider);
 
-// -----------------------------
-// Add Passenger Review
-// -----------------------------
-router.post("/:riderId/review", riderController.addReview);
+// Add Passenger Review (authenticated rider or user)
+router.post("/:riderId/review", verifyToken, allowRoles("user"), riderController.addReview);
 
 module.exports = router;

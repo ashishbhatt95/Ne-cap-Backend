@@ -11,12 +11,23 @@
  *   post:
  *     summary: Rider adds a new vehicle
  *     tags: [Vehicle]
+ *     security:
+ *       - BearerAuth: []
+ *     description: "Accessible by authenticated riders only"
  *     requestBody:
  *       required: true
  *       content:
  *         multipart/form-data:
  *           schema:
  *             type: object
+ *             required:
+ *               - riderId
+ *               - categoryId
+ *               - vehicleNumber
+ *               - front
+ *               - back
+ *               - leftSide
+ *               - rightSide
  *             properties:
  *               riderId:
  *                 type: string
@@ -50,6 +61,12 @@
  *         description: Vehicle added successfully
  *       400:
  *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (role not allowed)
+ *       500:
+ *         description: Internal Server Error
  */
 
 /**
@@ -58,11 +75,38 @@
  *   get:
  *     summary: Get all vehicles added by the logged-in rider
  *     tags: [Vehicle]
+ *     security:
+ *       - BearerAuth: []
+ *     description: "Accessible by authenticated riders only"
  *     responses:
  *       200:
  *         description: List of vehicles for the rider
+ *       401:
+ *         description: Unauthorized
  *       403:
  *         description: Forbidden (non-rider)
+ *       500:
+ *         description: Internal Server Error
+ */
+
+/**
+ * @swagger
+ * /api/vehicle:
+ *   get:
+ *     summary: Get all vehicles (Admin only)
+ *     tags: [Vehicle]
+ *     security:
+ *       - BearerAuth: []
+ *     description: "Accessible only by superadmin"
+ *     responses:
+ *       200:
+ *         description: List of all vehicles
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       500:
+ *         description: Internal Server Error
  */
 
 /**
@@ -71,6 +115,8 @@
  *   get:
  *     summary: Get vehicle by ID (Admin or Rider)
  *     tags: [Vehicle]
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: vehicleId
@@ -81,14 +127,19 @@
  *     responses:
  *       200:
  *         description: Vehicle details
+ *       401:
+ *         description: Unauthorized
  *       403:
  *         description: Forbidden (rider trying to access another's vehicle)
  *       404:
  *         description: Vehicle not found
- *
+ *       500:
+ *         description: Internal Server Error
  *   put:
  *     summary: Update vehicle details (Admin or Rider)
  *     tags: [Vehicle]
+ *     security:
+ *       - BearerAuth: []
  *     requestBody:
  *       required: false
  *       content:
@@ -121,14 +172,19 @@
  *     responses:
  *       200:
  *         description: Vehicle updated successfully
+ *       401:
+ *         description: Unauthorized
  *       403:
  *         description: Forbidden
  *       404:
  *         description: Vehicle not found
- *
+ *       500:
+ *         description: Internal Server Error
  *   delete:
  *     summary: Delete a vehicle (Admin or Rider)
  *     tags: [Vehicle]
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: vehicleId
@@ -139,19 +195,12 @@
  *     responses:
  *       200:
  *         description: Vehicle deleted successfully
+ *       401:
+ *         description: Unauthorized
  *       403:
  *         description: Forbidden
  *       404:
  *         description: Vehicle not found
- */
-
-/**
- * @swagger
- * /api/vehicle:
- *   get:
- *     summary: Get all vehicles (Admin only)
- *     tags: [Vehicle]
- *     responses:
- *       200:
- *         description: List of all vehicles
+ *       500:
+ *         description: Internal Server Error
  */
