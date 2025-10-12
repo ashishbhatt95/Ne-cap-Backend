@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const riderController = require("../controllers/riderController");
 const upload = require("../middlewares/multer");
-const { verifyToken, allowRoles } = require("../middlewares/authMiddleware");
+const { roleAuthorization } = require("../middlewares/authMiddleware");
 
 // OTP & Registration (public)
 router.post(
@@ -18,16 +18,16 @@ router.post("/verify-otp", riderController.verifyRiderOtp);
 router.post("/resend-otp", riderController.resendOtp);
 
 // CRUD Operations (protected)
-router.get("/", verifyToken, allowRoles("superadmin"), riderController.getAllRiders);
-router.get("/:id", verifyToken, allowRoles("superadmin", "rider"), riderController.getRiderById);
-router.put("/:id", verifyToken, allowRoles("rider", "superadmin"), riderController.updateRider);
-router.delete("/:id", verifyToken, allowRoles("superadmin"), riderController.deleteRider);
+router.get("/", roleAuthorization(["superadmin"]), riderController.getAllRiders);
+router.get("/:id", roleAuthorization(["superadmin", "rider"]), riderController.getRiderById);
+router.put("/:id", roleAuthorization(["rider", "superadmin"]), riderController.updateRider);
+router.delete("/:id", roleAuthorization(["superadmin"]), riderController.deleteRider);
 
 // Admin Approve / Reject
-router.put("/:id/approve", verifyToken, allowRoles("superadmin"), riderController.approveRider);
-router.put("/:id/reject", verifyToken, allowRoles("superadmin"), riderController.rejectRider);
+router.put("/:id/approve", roleAuthorization(["superadmin"]), riderController.approveRider);
+router.put("/:id/reject", roleAuthorization(["superadmin"]), riderController.rejectRider);
 
-// Add Passenger Review (authenticated rider or user)
-router.post("/:riderId/review", verifyToken, allowRoles("user"), riderController.addReview);
+// Add Passenger Review
+router.post("/:riderId/review", roleAuthorization(["user"]), riderController.addReview);
 
 module.exports = router;

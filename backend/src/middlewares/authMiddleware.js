@@ -1,39 +1,54 @@
-const jwt = require("jsonwebtoken");
-const Passenger = require("../models/passengerSchema");
-const Rider = require("../models/Rider");
-const Superadmin = require("../models/admin");
+const jwt = require('jsonwebtoken');
+const Passenger = require('../models/passengerSchema'); 
+const Rider = require('../models/Rider');               
+const Superadmin = require('../models/admin');          
 
-exports.verifyToken = async (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "No token provided" });
+const roleAuthorization = (...allowedRoles) => {
+  // Flatten in case someone passes nested arrays
+  allowedRoles = allowedRoles.flat();
+
+  return async (req, res, next) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.toLowerCase().startsWith("bearer ")) {
+        return res.status(401).json({ message: "Unauthorized: No token provided" });
+      }
+
+      const token = authHeader.split(" ")[1].trim();
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      let user;
+      const tokenRole = decoded.role.toLowerCase();
+      switch (tokenRole) {
+        case "user":
+          user = await Passenger.findById(decoded.id);
+          break;
+        case "rider":
+          user = await Rider.findById(decoded.id);
+          break;
+        case "admin":
+          user = await Superadmin.findById(decoded.id);
+          break;
+        default:
+          return res.status(403).json({ message: "Forbidden: Invalid role" });
+      }
+
+      if (!user) return res.status(404).json({ message: "User not found" });
+
+      // Normalize and check allowed roles
+      const allowedRolesNormalized = allowedRoles.map(r => r.toLowerCase());
+      if (!allowedRolesNormalized.includes(tokenRole)) {
+        return res.status(403).json({ message: "Forbidden: Insufficient permissions" });
+      }
+
+      req.user = { id: user._id, role: tokenRole };
+      next();
+    } catch (error) {
+      console.error("JWT Verification Error:", error.message);
+      return res.status(401).json({ message: "Unauthorized: Invalid or expired token" });
     }
-
-    const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    let user;
-    if (decoded.role === "user") user = await Passenger.findById(decoded.id);
-    if (decoded.role === "rider") user = await Rider.findById(decoded.id);
-    if (decoded.role === "superadmin") user = await Superadmin.findById(decoded.id);
-
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    req.user = { id: user._id, role: decoded.role };
-    next();
-  } catch (error) {
-    console.error("Auth Middleware Error:", error.message);
-    return res.status(401).json({ message: "Invalid or expired token" });
-  }
-};
-
-// Role-based access control
-exports.allowRoles = (...roles) => {
-  return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ message: "Forbidden: Insufficient permissions" });
-    }
-    next();
   };
 };
+
+
+module.exports = { roleAuthorization };

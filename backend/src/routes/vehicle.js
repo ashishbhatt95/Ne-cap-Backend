@@ -2,13 +2,12 @@ const express = require("express");
 const router = express.Router();
 const vehicleController = require("../controllers/vehicleController");
 const upload = require("../middlewares/multer");
-const { verifyToken, allowRoles } = require("../middlewares/authMiddleware");
+const { roleAuthorization } = require("../middlewares/authMiddleware");
 
 // Add Vehicle (Rider)
 router.post(
   "/add",
-  verifyToken,
-  allowRoles("rider"),
+  roleAuthorization(["rider"]),
   upload.fields([
     { name: "front", maxCount: 1 },
     { name: "back", maxCount: 1 },
@@ -21,19 +20,18 @@ router.post(
 );
 
 // Rider: Get own vehicles
-router.get("/my-vehicles", verifyToken, allowRoles("rider"), vehicleController.getRiderVehicles);
+router.get("/my-vehicles", roleAuthorization(["rider"]), vehicleController.getRiderVehicles);
 
 // Admin: Get all vehicles
-router.get("/", verifyToken, allowRoles("superadmin"), vehicleController.getAllVehicles);
+router.get("/", roleAuthorization(["superadmin"]), vehicleController.getAllVehicles);
 
 // Get vehicle by ID
-router.get("/:id", verifyToken, vehicleController.getVehicleById);
+router.get("/:id", roleAuthorization(["rider", "superadmin"]), vehicleController.getVehicleById);
 
 // Update vehicle
 router.put(
   "/:id",
-  verifyToken,
-  allowRoles("rider", "superadmin"),
+  roleAuthorization(["rider", "superadmin"]),
   upload.fields([
     { name: "front", maxCount: 1 },
     { name: "back", maxCount: 1 },
@@ -46,6 +44,6 @@ router.put(
 );
 
 // Delete vehicle
-router.delete("/:id", verifyToken, allowRoles("superadmin", "rider"), vehicleController.deleteVehicle);
+router.delete("/:id", roleAuthorization(["superadmin", "rider"]), vehicleController.deleteVehicle);
 
 module.exports = router;

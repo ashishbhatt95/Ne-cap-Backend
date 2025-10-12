@@ -1,6 +1,27 @@
 const Passenger = require("../models/passengerSchema");
 const Otp = require("../models/Otp");
 
+// Helper: Generate unique 7-char ID (3 letters + 4 digits)
+async function generateUniquePassengerId() {
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  function randomLetter() { return letters.charAt(Math.floor(Math.random() * letters.length)); }
+  function randomDigit() { return Math.floor(Math.random() * 10); }
+
+  let unique = false;
+  let passengerId;
+
+  while (!unique) {
+    passengerId = "";
+    for (let i = 0; i < 3; i++) passengerId += randomLetter();
+    for (let i = 0; i < 4; i++) passengerId += randomDigit();
+
+    const existing = await Passenger.findOne({ passengerId });
+    if (!existing) unique = true;
+  }
+
+  return passengerId;
+}
+
 // -----------------------------
 // STEP 1️⃣ — Send OTP (static 123456)
 // -----------------------------
@@ -90,13 +111,19 @@ exports.verifyOtpAndRegister = async (req, res) => {
       });
     }
 
+    // Generate unique passenger ID
+    const passengerId = await generateUniquePassengerId();
+
     // Create new passenger
     const passenger = new Passenger({
+      passengerId,
       name,
       email,
       dateOfBirth,
       mobile,
       role: "user",
+      registrationDate: new Date(),
+      status: "normal", // default status
     });
 
     await passenger.save();
@@ -105,6 +132,7 @@ exports.verifyOtpAndRegister = async (req, res) => {
     return res.json({
       success: true,
       message: "Passenger registered successfully",
+      data: passenger,
     });
   } catch (error) {
     console.error("verifyOtpAndRegister error:", error.message);
@@ -147,6 +175,48 @@ exports.getPassengerById = async (req, res) => {
     return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
+
+// -----------------------------
+//  GET LEADERBOARD (Unlimited)
+// -----------------------------
+
+exports.getLeaderboard = async (req, res) => {
+  try {
+    const leaderboard = await Passenger.find({ status: "buyer" }) // Only buyers
+      .sort({ bookingCount: -1 })
+      .select("passengerId name mobile status registrationDate bookingCount role"); // Only required fields
+
+    return res.json({
+      success: true,
+      count: leaderboard.length,
+      data: leaderboard,
+    });
+  } catch (error) {
+    console.error("getLeaderboard error:", error.message);
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+// -----------------------------
+// 💼 GET ALL BUYERS
+// -----------------------------
+exports.getAllBuyers = async (req, res) => {
+  try {
+    const buyers = await Passenger.find({ status: "buyer" })
+      .sort({ createdAt: -1 })
+      .select("passengerId name email status mobile bookingCount registrationDate");
+
+    return res.json({
+      success: true,
+      count: buyers.length,
+      data: buyers,
+    });
+  } catch (error) {
+    console.error("getAllBuyers error:", error.message);
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
 
 // -----------------------------
 // UPDATE PASSENGER

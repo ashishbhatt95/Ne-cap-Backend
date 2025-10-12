@@ -65,6 +65,23 @@
  *     responses:
  *       200:
  *         description: Passenger registered successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 message: { type: string, example: "Passenger registered successfully" }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     passengerId: { type: string, example: "NAA0239" }
+ *                     name: { type: string, example: "Rohit Sharma" }
+ *                     email: { type: string, example: "rohit@gmail.com" }
+ *                     dateOfBirth: { type: string, example: "1995-04-10" }
+ *                     mobile: { type: string, example: "9876543210" }
+ *                     role: { type: string, example: "user" }
+ *                     registrationDate: { type: string, example: "2025-10-12T12:30:00Z" }
  *       400:
  *         description: Invalid OTP or already registered
  *       500:
@@ -83,6 +100,24 @@
  *     responses:
  *       200:
  *         description: List of all passengers
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       passengerId: { type: string, example: "NAA0239" }
+ *                       name: { type: string, example: "Rohit Sharma" }
+ *                       email: { type: string, example: "rohit@gmail.com" }
+ *                       dateOfBirth: { type: string, example: "1995-04-10" }
+ *                       mobile: { type: string, example: "9876543210" }
+ *                       role: { type: string, example: "user" }
+ *                       registrationDate: { type: string, example: "2025-10-12T12:30:00Z" }
  *       401:
  *         description: Unauthorized
  *       403:
@@ -110,6 +145,22 @@
  *     responses:
  *       200:
  *         description: Passenger data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     passengerId: { type: string, example: "NAA0239" }
+ *                     name: { type: string, example: "Rohit Sharma" }
+ *                     email: { type: string, example: "rohit@gmail.com" }
+ *                     dateOfBirth: { type: string, example: "1995-04-10" }
+ *                     mobile: { type: string, example: "9876543210" }
+ *                     role: { type: string, example: "user" }
+ *                     registrationDate: { type: string, example: "2025-10-12T12:30:00Z" }
  *       401:
  *         description: Unauthorized
  *       403:

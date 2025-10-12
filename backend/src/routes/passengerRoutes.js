@@ -6,18 +6,22 @@ const {
   getAllPassengers,
   getPassengerById,
   updatePassenger,
+  getLeaderboard,
+  getAllBuyers,
   deletePassenger,
 } = require("../controllers/passengerController");
-const { verifyToken, allowRoles } = require("../middlewares/authMiddleware");
+const { roleAuthorization } = require("../middlewares/authMiddleware");
 
 // OTP Signup Routes (public)
 router.post("/signup/send-otp", signupSendOtp);
 router.post("/signup/verify-otp", verifyOtpAndRegister);
 
 // Passenger CRUD Routes (protected - admin only)
-router.get("/", verifyToken, allowRoles("superadmin"), getAllPassengers);
-router.get("/:id", verifyToken, allowRoles("superadmin"), getPassengerById);
-router.put("/:id", verifyToken, allowRoles("superadmin"), updatePassenger);
-router.delete("/:id", verifyToken, allowRoles("superadmin"), deletePassenger);
+router.get("/leaderboard", roleAuthorization(["admin"]), getLeaderboard);
+router.get("/buyers", roleAuthorization(["admin"]), getAllBuyers);
+router.get("/", roleAuthorization(["admin"]), getAllPassengers);
+router.get("/:id", roleAuthorization(["admin"]), getPassengerById);
+router.put("/:id", roleAuthorization(["admin"]), updatePassenger);
+router.delete("/:id", roleAuthorization(["admin"]), deletePassenger);
 
 module.exports = router;
