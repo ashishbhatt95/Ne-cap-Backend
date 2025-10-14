@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const RiderSchema = new mongoose.Schema(
   {
+    riderId: { type: String, unique: true }, // Unique Rider ID
     name: String,
     dob: Date,
     fatherName: String,
@@ -15,14 +16,14 @@ const RiderSchema = new mongoose.Schema(
     aadharBack: String,
     selfie: String,
     otpVerified: { type: Boolean, default: false },
-    isSubmitted: { type: Boolean, default: false }, // rider submitted registration
-    isApproved: { type: Boolean, default: false },  // admin approval
-    role: { type: String, default: "rider" },       // <-- add this
-
-    // Reviews simplified: only numbers
-    reviews: [Number], // array of rating numbers
+    isSubmitted: { type: Boolean, default: false },
+    isApproved: { type: Boolean, default: false },
+    role: { type: String, default: "rider" },
+    reviews: [Number],
     reviewCount: { type: Number, default: 0 },
     averageRating: { type: Number, default: 0 },
+    vehicleCount: { type: Number, default: 0 },
+    registrationDate: { type: Date, default: Date.now }, // Rider registration date
   },
   { timestamps: true }
 );

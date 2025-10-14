@@ -2,6 +2,26 @@ const Rider = require("../models/Rider");
 const Otp = require("../models/Otp");
 const { uploadImages } = require("../services/cloudinary");
 
+async function generateUniqueRiderId() {
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  function randomLetter() { return letters.charAt(Math.floor(Math.random() * letters.length)); }
+  function randomDigit() { return Math.floor(Math.random() * 10); }
+
+  let unique = false;
+  let riderId;
+
+  while (!unique) {
+    riderId = "";
+    for (let i = 0; i < 3; i++) riderId += randomLetter();
+    for (let i = 0; i < 4; i++) riderId += randomDigit();
+
+    const existing = await Rider.findOne({ riderId });
+    if (!existing) unique = true;
+  }
+
+  return riderId;
+}
+
 // -----------------------------
 // Step 1: Register Rider + Send OTP
 // -----------------------------
@@ -31,29 +51,48 @@ exports.registerRider = async (req, res) => {
     const selfieUrl = req.files?.selfie ? (await uploadImages(req.files.selfie, "riders/selfie"))[0].url : "";
 
     if (!existing) {
+      const riderId = await generateUniqueRiderId();
+      const registrationDate = new Date();
+
       existing = await Rider.create({
-        name, dob, fatherName, motherName, email, mobile: mobileStr,
-        aadharNumber, panNumber, address,
+        riderId,
+        name,
+        dob,
+        fatherName,
+        motherName,
+        email,
+        mobile: mobileStr,
+        aadharNumber,
+        panNumber,
+        address,
         aadharFront: aadharFrontUrl,
         aadharBack: aadharBackUrl,
         selfie: selfieUrl,
         otpVerified: false,
-        isSubmitted: true, // rider submitted registration
+        isSubmitted: true,
+        registrationDate,
       });
     } else {
-      existing.name = name; existing.dob = dob; existing.fatherName = fatherName; existing.motherName = motherName;
-      existing.email = email; existing.aadharNumber = aadharNumber; existing.panNumber = panNumber;
-      existing.address = address; existing.aadharFront = aadharFrontUrl; existing.aadharBack = aadharBackUrl;
+      existing.name = name;
+      existing.dob = dob;
+      existing.fatherName = fatherName;
+      existing.motherName = motherName;
+      existing.email = email;
+      existing.aadharNumber = aadharNumber;
+      existing.panNumber = panNumber;
+      existing.address = address;
+      existing.aadharFront = aadharFrontUrl;
+      existing.aadharBack = aadharBackUrl;
       existing.selfie = selfieUrl;
       existing.isSubmitted = true;
       await existing.save();
     }
 
     await Otp.deleteMany({ mobile: mobileStr });
-    const otp = "123456"; // static OTP for testing
+    const otp = "123456";
     await Otp.create({ mobile: mobileStr, otp });
 
-    return res.json({ success: true, message: "OTP sent successfully (use 123456 for testing)"});
+    return res.json({ success: true, message: "OTP sent successfully (use 123456 for testing)", rider: existing });
   } catch (err) {
     console.error("registerRider error:", err);
     res.status(500).json({ success: false, message: err.message });
@@ -81,7 +120,7 @@ exports.verifyRiderOtp = async (req, res) => {
     await rider.save();
     await Otp.deleteMany({ mobile: mobileStr });
 
-    return res.json({ success: true, message: "Rider registered successfully", rider });
+    return res.json({ success: true, message: "Rider registered successfully" });
   } catch (err) {
     console.error("verifyRiderOtp error:", err);
     res.status(500).json({ success: false, message: err.message });
@@ -117,7 +156,7 @@ exports.resendOtp = async (req, res) => {
 // -----------------------------
 exports.getAllRiders = async (req, res) => {
   try {
-    const riders = await Rider.find();
+    const riders = await Rider.find().sort({ createdAt: -1 });
     return res.json({ success: true, riders });
   } catch (err) {
     console.error("getAllRiders error:", err);
@@ -125,6 +164,7 @@ exports.getAllRiders = async (req, res) => {
   }
 };
 
+// ✅ FIXED: Removed the typo 'c' on line 175
 exports.getRiderById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -155,7 +195,7 @@ exports.deleteRider = async (req, res) => {
     const { id } = req.params;
     const rider = await Rider.findByIdAndDelete(id);
     if (!rider) return res.status(404).json({ success: false, message: "Rider not found" });
-    return res.json({ success: true, message: "Rider deleted" });
+    return res.json({ success: true, message: "Rider deleted successfully" });
   } catch (err) {
     console.error("deleteRider error:", err);
     res.status(500).json({ success: false, message: err.message });
@@ -163,37 +203,32 @@ exports.deleteRider = async (req, res) => {
 };
 
 // -----------------------------
-// Admin: Approve / Reject Rider
+// Admin: Approve or Reject Rider (Single API)
 // -----------------------------
-exports.approveRider = async (req, res) => {
+exports.updateRiderStatus = async (req, res) => {
   try {
     const { id } = req.params;
+    const { action } = req.body; // "approve" or "reject"
+
     const rider = await Rider.findById(id);
     if (!rider) return res.status(404).json({ success: false, message: "Rider not found" });
 
-    rider.isApproved = true;
-    await rider.save();
-
-    return res.json({ success: true, message: "Rider approved", rider });
+    if (action === "approve") {
+      rider.isApproved = true;
+      await rider.save();
+      return res.json({ success: true, message: "Rider approved successfully", rider });
+    } 
+    
+    else if (action === "reject") {
+      await Rider.findByIdAndDelete(id);
+      return res.json({ success: true, message: "Rider rejected and deleted from database" });
+    } 
+    
+    else {
+      return res.status(400).json({ success: false, message: "Invalid action. Use 'approve' or 'reject'." });
+    }
   } catch (err) {
-    console.error("approveRider error:", err);
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
-
-exports.rejectRider = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const rider = await Rider.findById(id);
-    if (!rider) return res.status(404).json({ success: false, message: "Rider not found" });
-
-    rider.isApproved = false;
-    rider.isSubmitted = false;
-    await rider.save();
-
-    return res.json({ success: true, message: "Rider rejected", rider });
-  } catch (err) {
-    console.error("rejectRider error:", err);
+    console.error("updateRiderStatus error:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
@@ -218,9 +253,52 @@ exports.addReview = async (req, res) => {
 
     await rider.save();
 
-    return res.json({ success: true, message: "Review added", reviewCount: rider.reviewCount, averageRating: rider.averageRating });
+    return res.json({ 
+      success: true, 
+      message: "Review added successfully", 
+      reviewCount: rider.reviewCount, 
+      averageRating: rider.averageRating 
+    });
   } catch (err) {
     console.error("addReview error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// -----------------------------
+// Get all approved riders
+// -----------------------------
+exports.getApprovedRiders = async (req, res) => {
+  try {
+    const approvedRiders = await Rider.find({ isApproved: true })
+      .sort({ createdAt: -1 });
+
+    return res.json({
+      success: true,
+      count: approvedRiders.length,
+      riders: approvedRiders,
+    });
+  } catch (err) {
+    console.error("getApprovedRiders error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// -----------------------------
+// Get all pending riders (not approved yet)
+// -----------------------------
+exports.getPendingRiders = async (req, res) => {
+  try {
+    const pendingRiders = await Rider.find({ isApproved: false, isSubmitted: true })
+      .sort({ createdAt: -1 });
+
+    return res.json({
+      success: true,
+      count: pendingRiders.length,
+      riders: pendingRiders,
+    });
+  } catch (err) {
+    console.error("getPendingRiders error:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };

@@ -17,15 +17,20 @@ router.post(
 router.post("/verify-otp", riderController.verifyRiderOtp);
 router.post("/resend-otp", riderController.resendOtp);
 
+// Get all approved riders
+router.get("/approved", roleAuthorization(["admin"]), riderController.getApprovedRiders);
+
+// Get all pending riders
+router.get("/pending", roleAuthorization(["admin"]), riderController.getPendingRiders);
+
 // CRUD Operations (protected)
-router.get("/", roleAuthorization(["superadmin"]), riderController.getAllRiders);
-router.get("/:id", roleAuthorization(["superadmin", "rider"]), riderController.getRiderById);
-router.put("/:id", roleAuthorization(["rider", "superadmin"]), riderController.updateRider);
-router.delete("/:id", roleAuthorization(["superadmin"]), riderController.deleteRider);
+router.get("/", roleAuthorization(["admin"]), riderController.getAllRiders);
+router.get("/:id", roleAuthorization(["admin", "rider"]), riderController.getRiderById);
+router.put("/:id", roleAuthorization(["rider", "admin"]), riderController.updateRider);
+router.delete("/:id", roleAuthorization(["admin"]), riderController.deleteRider);
 
 // Admin Approve / Reject
-router.put("/:id/approve", roleAuthorization(["superadmin"]), riderController.approveRider);
-router.put("/:id/reject", roleAuthorization(["superadmin"]), riderController.rejectRider);
+router.put("/:id/updateRiderStatus", roleAuthorization(["admin"]), riderController.updateRiderStatus);
 
 // Add Passenger Review
 router.post("/:riderId/review", roleAuthorization(["user"]), riderController.addReview);

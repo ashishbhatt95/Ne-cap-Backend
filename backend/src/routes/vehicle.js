@@ -23,15 +23,15 @@ router.post(
 router.get("/my-vehicles", roleAuthorization(["rider"]), vehicleController.getRiderVehicles);
 
 // Admin: Get all vehicles
-router.get("/", roleAuthorization(["superadmin"]), vehicleController.getAllVehicles);
+router.get("/", roleAuthorization(["admin"]), vehicleController.getAllVehicles);
 
 // Get vehicle by ID
-router.get("/:id", roleAuthorization(["rider", "superadmin"]), vehicleController.getVehicleById);
+router.get("/:id", roleAuthorization(["rider", "admin"]), vehicleController.getVehicleById);
 
 // Update vehicle
 router.put(
   "/:id",
-  roleAuthorization(["rider", "superadmin"]),
+  roleAuthorization(["rider", "admin"]),
   upload.fields([
     { name: "front", maxCount: 1 },
     { name: "back", maxCount: 1 },
@@ -44,6 +44,6 @@ router.put(
 );
 
 // Delete vehicle
-router.delete("/:id", roleAuthorization(["superadmin", "rider"]), vehicleController.deleteVehicle);
+router.delete("/:id", roleAuthorization(["admin", "rider"]), vehicleController.deleteVehicle);
 
 module.exports = router;

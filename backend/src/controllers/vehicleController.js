@@ -1,5 +1,6 @@
 const Vehicle = require("../models/Vehicle");
 const { uploadImages } = require("../services/cloudinary");
+const Rider = require("../models/Rider")
 
 // -----------------------------
 // Add Vehicle (Rider can add multiple)
@@ -12,7 +13,6 @@ exports.addVehicle = async (req, res) => {
       return res.status(400).json({ success: false, message: "riderId, categoryId, and vehicleNumber are required" });
     }
 
-    // Upload images using multer + Cloudinary
     const images = {};
     if (req.files?.front) images.front = req.files.front[0].path;
     if (req.files?.back) images.back = req.files.back[0].path;
@@ -33,6 +33,13 @@ exports.addVehicle = async (req, res) => {
       pollutionCert: pollutionCertUrl,
     });
 
+    // ✅ Update Rider vehicle count
+    const rider = await Rider.findById(riderId);
+    if (rider) {
+      rider.vehicleCount = await Vehicle.countDocuments({ riderId });
+      await rider.save();
+    }
+
     return res.status(201).json({ success: true, message: "Vehicle added successfully", vehicle: newVehicle });
   } catch (err) {
     console.error("addVehicle error:", err);
@@ -46,7 +53,7 @@ exports.addVehicle = async (req, res) => {
 exports.getRiderVehicles = async (req, res) => {
   try {
     const vehicles = await Vehicle.find({ riderId: req.user.id })
-      .populate("categoryId", "name type")
+      .populate("categoryId", "name type minPricePerKm fuelType personCapacity acType")
       .sort({ createdAt: -1 });
 
     return res.json({ success: true, vehicles });
@@ -120,16 +127,22 @@ exports.updateVehicle = async (req, res) => {
 // Delete Vehicle
 // -----------------------------
 // Delete Vehicle
+// Delete Vehicle
 exports.deleteVehicle = async (req, res) => {
   try {
     const vehicle = await Vehicle.findById(req.params.id);
     if (!vehicle)
       return res.status(404).json({ success: false, message: "Vehicle not found" });
 
-    // Use deleteOne() on document
-    await vehicle.deleteOne(); 
+    const riderId = vehicle.riderId;
 
-    // OR directly: await Vehicle.findByIdAndDelete(req.params.id);
+    await vehicle.deleteOne();
+
+    const rider = await Rider.findById(riderId);
+    if (rider) {
+      rider.vehicleCount = await Vehicle.countDocuments({ riderId });
+      await rider.save();
+    }
 
     return res.json({ success: true, message: "Vehicle deleted" });
   } catch (err) {
@@ -137,3 +150,5 @@ exports.deleteVehicle = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+
