@@ -1,18 +1,26 @@
 const VehicleCategory = require("../models/VehicleCategory");
 const { uploadImages } = require("../services/cloudinary");
 
-// -----------------------------
+// ------------------------------------
 // Add Vehicle Category (Admin)
-// -----------------------------
+// ------------------------------------
 exports.addVehicleCategory = async (req, res) => {
   try {
-    console.log("Incoming vehicle category data:", req.body);
-    console.log("Incoming files:", req.files);
-
-    const { name, type, minPricePerKm, fuelType, personCapacity, acType } = req.body;
+    const {
+      name,
+      type,
+      minPricePerKm,
+      fuelType,
+      personCapacity,
+      acType,
+      status,
+    } = req.body;
 
     if (!name || !type || !minPricePerKm || !fuelType || !personCapacity || !acType) {
-      return res.status(400).json({ success: false, message: "All required fields must be filled" });
+      return res.status(400).json({
+        success: false,
+        message: "All required fields must be filled",
+      });
     }
 
     let imageUrl = "";
@@ -21,61 +29,73 @@ exports.addVehicleCategory = async (req, res) => {
       imageUrl = uploaded[0]?.url || "";
     }
 
-    if (!imageUrl) {
-      return res.status(400).json({ success: false, message: "Image upload failed or not provided" });
-    }
-
     const newCategory = await VehicleCategory.create({
       name,
       type,
       minPricePerKm,
       fuelType,
+      image: imageUrl,
       personCapacity,
       acType,
-      image: imageUrl,
+      status: status || "Active",
     });
 
     return res.status(201).json({
       success: true,
       message: "Vehicle category added successfully",
+      data: newCategory,
     });
   } catch (err) {
     console.error("addVehicleCategory error:", err);
-    res.status(500).json({ success: false, message: err.message });
+    return res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// -----------------------------
-// Get All Categories
-// -----------------------------
+// ------------------------------------
+// Get All Vehicle Categories
+// ------------------------------------
 exports.getAllCategories = async (req, res) => {
   try {
-    const categories = await VehicleCategory.find();
-    return res.json({ success: true, categories });
+    const categories = await VehicleCategory.find().sort({ createdAt: -1 });
+    return res.status(200).json({
+      success: true,
+      count: categories.length,
+      data: categories,
+    });
   } catch (err) {
     console.error("getAllCategories error:", err);
-    res.status(500).json({ success: false, message: err.message });
+    return res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// -----------------------------
-// Get Category by ID
-// -----------------------------
+// ------------------------------------
+// Get Single Vehicle Category by ID
+// ------------------------------------
 exports.getCategoryById = async (req, res) => {
   try {
     const { id } = req.params;
     const category = await VehicleCategory.findById(id);
-    if (!category) return res.status(404).json({ success: false, message: "Category not found" });
-    return res.json({ success: true, category });
+
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: "Vehicle category not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: category,
+    });
   } catch (err) {
     console.error("getCategoryById error:", err);
-    res.status(500).json({ success: false, message: err.message });
+    return res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// -----------------------------
-// Update Category
-// -----------------------------
+// ------------------------------------
+// Update Vehicle Category
+// ------------------------------------
 exports.updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
@@ -87,27 +107,45 @@ exports.updateCategory = async (req, res) => {
     }
 
     const updatedCategory = await VehicleCategory.findByIdAndUpdate(id, updates, { new: true });
-    if (!updatedCategory) return res.status(404).json({ success: false, message: "Category not found" });
+    if (!updatedCategory) {
+      return res.status(404).json({
+        success: false,
+        message: "Vehicle category not found",
+      });
+    }
 
-    return res.json({ success: true, message: "Category updated", category: updatedCategory });
+    return res.status(200).json({
+      success: true,
+      message: "Vehicle category updated successfully",
+      data: updatedCategory,
+    });
   } catch (err) {
     console.error("updateCategory error:", err);
-    res.status(500).json({ success: false, message: err.message });
+    return res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// -----------------------------
-// Delete Category
-// -----------------------------
+// ------------------------------------
+// Delete Vehicle Category
+// ------------------------------------
 exports.deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const category = await VehicleCategory.findByIdAndDelete(id);
-    if (!category) return res.status(404).json({ success: false, message: "Category not found" });
+    const deleted = await VehicleCategory.findByIdAndDelete(id);
 
-    return res.json({ success: true, message: "Category deleted" });
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: "Vehicle category not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Vehicle category deleted successfully",
+    });
   } catch (err) {
     console.error("deleteCategory error:", err);
-    res.status(500).json({ success: false, message: err.message });
+    return res.status(500).json({ success: false, message: err.message });
   }
 };

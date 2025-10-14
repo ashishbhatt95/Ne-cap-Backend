@@ -7,26 +7,26 @@ const { roleAuthorization } = require("../middlewares/authMiddleware");
 // Add Vehicle Category (Admin)
 router.post(
   "/add",
-  roleAuthorization(["superadmin"]),
+  roleAuthorization(["admin"]),
   upload.fields([{ name: "image", maxCount: 1 }]),
   vehicleController.addVehicleCategory
 );
 
-// Get all categories
-router.get("/", roleAuthorization(["superadmin", "vendor"]), vehicleController.getAllCategories);
+// Get All Vehicle Categories (Admin, Vendor)
+router.get("/", roleAuthorization(["admin", "vendor"]), vehicleController.getAllCategories);
 
-// Get category by ID
-router.get("/:id", roleAuthorization(["superadmin", "vendor"]), vehicleController.getCategoryById);
+// Get Vehicle Category by ID (Admin, Vendor)
+router.get("/:id", roleAuthorization(["admin", "vendor"]), vehicleController.getCategoryById);
 
-// Update category
+// Update Vehicle Category (Admin)
 router.put(
   "/:id",
-  roleAuthorization(["superadmin"]),
+  roleAuthorization(["admin"]),
   upload.fields([{ name: "image", maxCount: 1 }]),
   vehicleController.updateCategory
 );
 
-// Delete category
-router.delete("/:id", roleAuthorization(["superadmin"]), vehicleController.deleteCategory);
+// Delete Vehicle Category (Admin)
+router.delete("/:id", roleAuthorization(["admin"]), vehicleController.deleteCategory);
 
 module.exports = router;

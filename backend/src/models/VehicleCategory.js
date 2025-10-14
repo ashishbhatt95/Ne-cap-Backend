@@ -8,7 +8,8 @@ const VehicleCategorySchema = new mongoose.Schema(
     fuelType: { type: String, required: true },      // Fuel type
     image: { type: String },                         // Image URL/Icon
     personCapacity: { type: Number, required: true },// Seats
-    acType: { type: String, enum: ["AC", "Non AC"], required: true }, // AC/Non AC
+    acType: { type: String, required: true }, // AC/Non AC
+    status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
   },
   { timestamps: true }
 );
