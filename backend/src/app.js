@@ -1,7 +1,6 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const passengerRoutes = require("./routes/passengerRoutes");
 const swaggerDocs = require("../src/swagger/index");
 
 const app = express();
@@ -13,19 +12,21 @@ app.use(cors());
 const vehicleCategoryRoutes = require("./routes/vehicleCategory");
 
 // Routes
-app.use("/api/passenger", passengerRoutes);
 app.use("/api/vehicle-category", vehicleCategoryRoutes);
 const vehicleRoutes = require("./routes/vehicle");
 app.use("/api/vehicle", vehicleRoutes);
-
-const riderRoutes = require("./routes/riderRoutes");
-app.use("/api/rider", riderRoutes);
 
 const bookingRoutes = require("./routes/bookingRoutes");
 app.use("/api/booking", bookingRoutes);
 
 const adminAuthRoutes = require("./routes/adminAuthRoutes");
 app.use("/api/admin/auth", adminAuthRoutes);
+
+const passengerRoutes = require("./routes/passengerRoutes");
+app.use("/api/passenger", passengerRoutes);
+
+const riderRoutes = require("./routes/riderRoutes");
+app.use("/api/rider", riderRoutes);
 
 swaggerDocs(app);
 

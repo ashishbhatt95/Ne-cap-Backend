@@ -1,8 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const {
-  signupSendOtp,
-  verifyOtpAndRegister,
   getAllPassengers,
   getPassengerById,
   updatePassenger,
@@ -12,9 +10,11 @@ const {
 } = require("../controllers/passengerController");
 const { roleAuthorization } = require("../middlewares/authMiddleware");
 
-// OTP Signup Routes (public)
-router.post("/signup/send-otp", signupSendOtp);
-router.post("/signup/verify-otp", verifyOtpAndRegister);
+const passengerAuth = require("../controllers/passengerAuthController");
+
+
+router.post("/send-otp", passengerAuth.sendPassengerOtp);
+router.post("/verify-otp", passengerAuth.verifyPassengerOtp);
 
 // Passenger CRUD Routes (protected - admin only)
 router.get("/leaderboard", roleAuthorization(["admin"]), getLeaderboard);

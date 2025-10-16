@@ -3,8 +3,12 @@ const router = express.Router();
 const riderController = require("../controllers/riderController");
 const upload = require("../middlewares/multer");
 const { roleAuthorization } = require("../middlewares/authMiddleware");
+const riderAuth = require("../controllers/riderAuthController");
 
-// OTP & Registration (public)
+router.post("/send-otp", riderAuth.sendRiderOtp);
+router.post("/verify-otp", riderAuth.verifyRiderOtp);
+
+// Registration (public)
 router.post(
   "/register",
   upload.fields([
@@ -14,9 +18,6 @@ router.post(
   ]),
   riderController.registerRider
 );
-router.post("/verify-otp", riderController.verifyRiderOtp);
-router.post("/resend-otp", riderController.resendOtp);
-
 // Get all approved riders
 router.get("/approved", roleAuthorization(["admin"]), riderController.getApprovedRiders);
 
