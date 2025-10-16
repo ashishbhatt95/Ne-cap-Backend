@@ -1,36 +1,44 @@
+const jwt = require("jsonwebtoken");
 const Rider = require("../models/Rider");
-const Otp = require("../models/Otp");
 const { uploadImages } = require("../services/cloudinary");
 
+// Helper: Generate unique 7-char Rider ID
 async function generateUniqueRiderId() {
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  function randomLetter() { return letters.charAt(Math.floor(Math.random() * letters.length)); }
-  function randomDigit() { return Math.floor(Math.random() * 10); }
+  const randomLetter = () => letters.charAt(Math.floor(Math.random() * letters.length));
+  const randomDigit = () => Math.floor(Math.random() * 10);
 
-  let unique = false;
-  let riderId;
-
-  while (!unique) {
-    riderId = "";
-    for (let i = 0; i < 3; i++) riderId += randomLetter();
-    for (let i = 0; i < 4; i++) riderId += randomDigit();
-
-    const existing = await Rider.findOne({ riderId });
-    if (!existing) unique = true;
-  }
-
+  let riderId, existing;
+  do {
+    riderId =
+      Array.from({ length: 3 }, randomLetter).join("") +
+      Array.from({ length: 4 }, randomDigit).join("");
+    existing = await Rider.findOne({ riderId });
+  } while (existing);
   return riderId;
 }
 
+// Helper: JWT Generator
+const generateRiderToken = (id) => {
+  return jwt.sign({ id, role: "rider" }, process.env.JWT_SECRET, { expiresIn: "7d" });
+};
+
 // -----------------------------
-// Step 1: Register Rider + Send OTP
+// ✅ REGISTER RIDER (No OTP)
 // -----------------------------
 exports.registerRider = async (req, res) => {
   try {
-    console.log("Incoming registration request body:", req.body);
-    console.log("Incoming files:", req.files);
-
-    const { name, dob, fatherName, motherName, email, mobile, aadharNumber, panNumber, address } = req.body;
+    const {
+      name,
+      dob,
+      fatherName,
+      motherName,
+      email,
+      mobile,
+      aadharNumber,
+      panNumber,
+      address,
+    } = req.body;
 
     if (!name || !dob || !fatherName || !motherName || !email || !mobile || !aadharNumber || !address) {
       return res.status(400).json({ success: false, message: "All required fields must be filled" });
@@ -38,61 +46,67 @@ exports.registerRider = async (req, res) => {
 
     const mobileStr = mobile.toString().trim();
 
-    // Check existing rider
-    let existing = await Rider.findOne({ mobile: mobileStr });
-
-    if (existing && existing.otpVerified) {
-      return res.status(400).json({ success: false, message: "This mobile number is already registered" });
+    // Check if already registered
+    const existing = await Rider.findOne({ mobile: mobileStr });
+    if (existing) {
+      return res.status(400).json({ success: false, message: "Mobile number already registered" });
     }
 
-    // Upload Images
-    const aadharFrontUrl = req.files?.aadharFront ? (await uploadImages(req.files.aadharFront, "riders/aadharFront"))[0].url : "";
-    const aadharBackUrl = req.files?.aadharBack ? (await uploadImages(req.files.aadharBack, "riders/aadharBack"))[0].url : "";
-    const selfieUrl = req.files?.selfie ? (await uploadImages(req.files.selfie, "riders/selfie"))[0].url : "";
+    // Upload images to Cloudinary
+    const aadharFrontUrl = req.files?.aadharFront
+      ? (await uploadImages(req.files.aadharFront, "riders/aadharFront"))[0].url
+      : "";
+    const aadharBackUrl = req.files?.aadharBack
+      ? (await uploadImages(req.files.aadharBack, "riders/aadharBack"))[0].url
+      : "";
+    const selfieUrl = req.files?.selfie
+      ? (await uploadImages(req.files.selfie, "riders/selfie"))[0].url
+      : "";
 
-    if (!existing) {
-      const riderId = await generateUniqueRiderId();
-      const registrationDate = new Date();
+    // Generate unique Rider ID
+    const riderId = await generateUniqueRiderId();
 
-      existing = await Rider.create({
-        riderId,
-        name,
-        dob,
-        fatherName,
-        motherName,
-        email,
-        mobile: mobileStr,
-        aadharNumber,
-        panNumber,
-        address,
-        aadharFront: aadharFrontUrl,
-        aadharBack: aadharBackUrl,
-        selfie: selfieUrl,
-        otpVerified: false,
-        isSubmitted: true,
-        registrationDate,
-      });
-    } else {
-      existing.name = name;
-      existing.dob = dob;
-      existing.fatherName = fatherName;
-      existing.motherName = motherName;
-      existing.email = email;
-      existing.aadharNumber = aadharNumber;
-      existing.panNumber = panNumber;
-      existing.address = address;
-      existing.aadharFront = aadharFrontUrl;
-      existing.aadharBack = aadharBackUrl;
-      existing.selfie = selfieUrl;
-      existing.isSubmitted = true;
-      await existing.save();
-    }
+    // Create new rider
+    const rider = new Rider({
+      riderId,
+      name,
+      dob,
+      fatherName,
+      motherName,
+      email,
+      mobile: mobileStr,
+      aadharNumber,
+      panNumber,
+      address,
+      aadharFront: aadharFrontUrl,
+      aadharBack: aadharBackUrl,
+      selfie: selfieUrl,
+      otpVerified: true, // Auto true (no OTP flow)
+      isSubmitted: true,
+      isApproved: false,
+      role: "rider",
+      registrationDate: new Date(),
+    });
 
-    await Otp.deleteMany({ mobile: mobileStr });
-    const otp = "123456";
-    await Otp.create({ mobile: mobileStr, otp });
+    await rider.save();
 
-    return res.json({ success: true, message: "OTP sent successfully (use 123456 for testing)", rider: existing });
+    // Generate JWT
+    const token = generateRiderToken(rider._id);
+
+    return res.status(201).json({
+      success: true,
+      message: "Rider registered successfully",
+      token,
+      rider: {
+        id: rider._id,
+        riderId: rider.riderId,
+        name: rider.name,
+        email: rider.email,
+        mobile: rider.mobile,
+        role: rider.role,
+        isApproved: rider.isApproved,
+      },
+    });
   } catch (err) {
     console.error("registerRider error:", err);
     res.status(500).json({ success: false, message: err.message });
@@ -100,71 +114,21 @@ exports.registerRider = async (req, res) => {
 };
 
 // -----------------------------
-// Step 2: Verify OTP
-// -----------------------------
-exports.verifyRiderOtp = async (req, res) => {
-  try {
-    const { mobile, otp } = req.body;
-    if (!mobile || !otp) return res.status(400).json({ success: false, message: "Mobile and OTP are required" });
-
-    const mobileStr = mobile.toString().trim();
-    const otpRecord = await Otp.findOne({ mobile: mobileStr }).sort({ createdAt: -1 });
-    if (!otpRecord) return res.status(400).json({ success: false, message: "OTP not found or not sent" });
-
-    if (otpRecord.otp !== otp) return res.status(400).json({ success: false, message: "Invalid OTP" });
-
-    const rider = await Rider.findOne({ mobile: mobileStr });
-    if (!rider) return res.status(404).json({ success: false, message: "Rider not found" });
-
-    rider.otpVerified = true;
-    await rider.save();
-    await Otp.deleteMany({ mobile: mobileStr });
-
-    return res.json({ success: true, message: "Rider registered successfully" });
-  } catch (err) {
-    console.error("verifyRiderOtp error:", err);
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
-
-// -----------------------------
-// Resend OTP
-// -----------------------------
-exports.resendOtp = async (req, res) => {
-  try {
-    const { mobile } = req.body;
-    if (!mobile) return res.status(400).json({ success: false, message: "Mobile is required" });
-
-    const mobileStr = mobile.toString().trim();
-    const rider = await Rider.findOne({ mobile: mobileStr });
-    if (!rider) return res.status(404).json({ success: false, message: "Rider not found" });
-    if (rider.otpVerified) return res.status(400).json({ success: false, message: "Rider already verified" });
-
-    await Otp.deleteMany({ mobile: mobileStr });
-    const otp = "123456";
-    await Otp.create({ mobile: mobileStr, otp });
-
-    return res.json({ success: true, message: "OTP resent successfully (use 123456)" });
-  } catch (err) {
-    console.error("resendOtp error:", err);
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
-
-// -----------------------------
-// CRUD Operations
+// ✅ GET ALL RIDERS
 // -----------------------------
 exports.getAllRiders = async (req, res) => {
   try {
     const riders = await Rider.find().sort({ createdAt: -1 });
-    return res.json({ success: true, riders });
+    return res.json({ success: true, count: riders.length, riders });
   } catch (err) {
     console.error("getAllRiders error:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// ✅ FIXED: Removed the typo 'c' on line 175
+// -----------------------------
+// ✅ GET RIDER BY ID
+// -----------------------------
 exports.getRiderById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -177,19 +141,25 @@ exports.getRiderById = async (req, res) => {
   }
 };
 
+// -----------------------------
+// ✅ UPDATE RIDER
+// -----------------------------
 exports.updateRider = async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
     const rider = await Rider.findByIdAndUpdate(id, updates, { new: true });
     if (!rider) return res.status(404).json({ success: false, message: "Rider not found" });
-    return res.json({ success: true, message: "Rider updated", rider });
+    return res.json({ success: true, message: "Rider updated successfully", rider });
   } catch (err) {
     console.error("updateRider error:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
+// -----------------------------
+// ✅ DELETE RIDER
+// -----------------------------
 exports.deleteRider = async (req, res) => {
   try {
     const { id } = req.params;
@@ -203,13 +173,12 @@ exports.deleteRider = async (req, res) => {
 };
 
 // -----------------------------
-// Admin: Approve or Reject Rider (Single API)
+// ✅ ADMIN: APPROVE / REJECT
 // -----------------------------
 exports.updateRiderStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { action } = req.body; // "approve" or "reject"
-
+    const { action } = req.body; // "approve" | "reject"
     const rider = await Rider.findById(id);
     if (!rider) return res.status(404).json({ success: false, message: "Rider not found" });
 
@@ -217,14 +186,10 @@ exports.updateRiderStatus = async (req, res) => {
       rider.isApproved = true;
       await rider.save();
       return res.json({ success: true, message: "Rider approved successfully", rider });
-    } 
-    
-    else if (action === "reject") {
+    } else if (action === "reject") {
       await Rider.findByIdAndDelete(id);
-      return res.json({ success: true, message: "Rider rejected and deleted from database" });
-    } 
-    
-    else {
+      return res.json({ success: true, message: "Rider rejected and removed" });
+    } else {
       return res.status(400).json({ success: false, message: "Invalid action. Use 'approve' or 'reject'." });
     }
   } catch (err) {
@@ -234,15 +199,14 @@ exports.updateRiderStatus = async (req, res) => {
 };
 
 // -----------------------------
-// Add Passenger Review
+// ✅ ADD REVIEW
 // -----------------------------
 exports.addReview = async (req, res) => {
   try {
     const { riderId } = req.params;
     const { rating } = req.body;
-
     if (!rating || rating < 1 || rating > 5)
-      return res.status(400).json({ success: false, message: "Rating must be 1–5" });
+      return res.status(400).json({ success: false, message: "Rating must be between 1–5" });
 
     const rider = await Rider.findById(riderId);
     if (!rider) return res.status(404).json({ success: false, message: "Rider not found" });
@@ -253,11 +217,11 @@ exports.addReview = async (req, res) => {
 
     await rider.save();
 
-    return res.json({ 
-      success: true, 
-      message: "Review added successfully", 
-      reviewCount: rider.reviewCount, 
-      averageRating: rider.averageRating 
+    return res.json({
+      success: true,
+      message: "Review added successfully",
+      reviewCount: rider.reviewCount,
+      averageRating: rider.averageRating,
     });
   } catch (err) {
     console.error("addReview error:", err);
@@ -266,37 +230,22 @@ exports.addReview = async (req, res) => {
 };
 
 // -----------------------------
-// Get all approved riders
+// ✅ APPROVED & PENDING FILTERS
 // -----------------------------
 exports.getApprovedRiders = async (req, res) => {
   try {
-    const approvedRiders = await Rider.find({ isApproved: true })
-      .sort({ createdAt: -1 });
-
-    return res.json({
-      success: true,
-      count: approvedRiders.length,
-      riders: approvedRiders,
-    });
+    const riders = await Rider.find({ isApproved: true }).sort({ createdAt: -1 });
+    res.json({ success: true, count: riders.length, riders });
   } catch (err) {
     console.error("getApprovedRiders error:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// -----------------------------
-// Get all pending riders (not approved yet)
-// -----------------------------
 exports.getPendingRiders = async (req, res) => {
   try {
-    const pendingRiders = await Rider.find({ isApproved: false, isSubmitted: true })
-      .sort({ createdAt: -1 });
-
-    return res.json({
-      success: true,
-      count: pendingRiders.length,
-      riders: pendingRiders,
-    });
+    const riders = await Rider.find({ isApproved: false, isSubmitted: true }).sort({ createdAt: -1 });
+    res.json({ success: true, count: riders.length, riders });
   } catch (err) {
     console.error("getPendingRiders error:", err);
     res.status(500).json({ success: false, message: err.message });

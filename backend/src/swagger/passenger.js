@@ -2,16 +2,15 @@
  * @swagger
  * tags:
  *   name: Passenger
- *   description: Passenger registration, OTP, and CRUD APIs
+ *   description: Passenger management and OTP authentication
  */
 
 /**
  * @swagger
- * /api/passenger/signup/send-otp:
+ * /api/passenger/send-otp:
  *   post:
- *     summary: Send OTP for passenger signup
+ *     summary: Send OTP to passenger's mobile number
  *     tags: [Passenger]
- *     description: "Public endpoint, no JWT required"
  *     requestBody:
  *       required: true
  *       content:
@@ -19,31 +18,88 @@
  *           schema:
  *             type: object
  *             required:
- *               - name
- *               - email
- *               - dateOfBirth
  *               - mobile
  *             properties:
- *               name: { type: string, example: "Rohit Sharma" }
- *               email: { type: string, example: "rohit@gmail.com" }
- *               dateOfBirth: { type: string, example: "1995-04-10" }
- *               mobile: { type: string, example: "9876543210" }
+ *               mobile:
+ *                 type: string
+ *                 example: "9876543210"
  *     responses:
  *       200:
  *         description: OTP sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: OTP sent successfully
  *       400:
- *         description: Missing fields or already registered
+ *         description: Missing or invalid mobile number
  *       500:
- *         description: Internal Server Error
+ *         description: Internal server error
  */
 
 /**
  * @swagger
- * /api/passenger/signup/verify-otp:
+ * /api/passenger/verify-otp:
  *   post:
- *     summary: Verify OTP and complete passenger registration
+ *     summary: Verify OTP and check registration status
  *     tags: [Passenger]
- *     description: "Public endpoint, no JWT required"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - mobile
+ *               - otp
+ *             properties:
+ *               mobile:
+ *                 type: string
+ *                 example: "9876543210"
+ *               otp:
+ *                 type: string
+ *                 example: "123456"
+ *     responses:
+ *       200:
+ *         description: OTP verified successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 isRegister:
+ *                   type: boolean
+ *                   example: false
+ *                 mobile:
+ *                   type: string
+ *                   example: "9876543210"
+ *                 message:
+ *                   type: string
+ *                   example: First-time user. Please complete registration.
+ *                 token:
+ *                   type: string
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *       400:
+ *         description: Invalid OTP or missing fields
+ *       500:
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /api/passenger/register:
+ *   post:
+ *     summary: Register a new passenger
+ *     tags: [Passenger]
  *     requestBody:
  *       required: true
  *       content:
@@ -55,187 +111,199 @@
  *               - email
  *               - dateOfBirth
  *               - mobile
- *               - otp
  *             properties:
- *               name: { type: string, example: "Rohit Sharma" }
- *               email: { type: string, example: "rohit@gmail.com" }
- *               dateOfBirth: { type: string, example: "1995-04-10" }
- *               mobile: { type: string, example: "9876543210" }
- *               otp: { type: string, example: "123456" }
+ *               name:
+ *                 type: string
+ *                 example: "Ravi Kumar"
+ *               email:
+ *                 type: string
+ *                 example: "ravi@example.com"
+ *               dateOfBirth:
+ *                 type: string
+ *                 example: "1995-07-12"
+ *               mobile:
+ *                 type: string
+ *                 example: "9876543210"
  *     responses:
- *       200:
+ *       201:
  *         description: Passenger registered successfully
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 success: { type: boolean, example: true }
- *                 message: { type: string, example: "Passenger registered successfully" }
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Passenger registered successfully
+ *                 token:
+ *                   type: string
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
  *                 data:
  *                   type: object
  *                   properties:
- *                     passengerId: { type: string, example: "NAA0239" }
- *                     name: { type: string, example: "Rohit Sharma" }
- *                     email: { type: string, example: "rohit@gmail.com" }
- *                     dateOfBirth: { type: string, example: "1995-04-10" }
- *                     mobile: { type: string, example: "9876543210" }
- *                     role: { type: string, example: "user" }
- *                     registrationDate: { type: string, example: "2025-10-12T12:30:00Z" }
+ *                     id:
+ *                       type: string
+ *                       example: 670e77b9c9f32fbc27e15c00
+ *                     passengerId:
+ *                       type: string
+ *                       example: ABC1234
+ *                     name:
+ *                       type: string
+ *                       example: Ravi Kumar
+ *                     email:
+ *                       type: string
+ *                       example: ravi@example.com
+ *                     mobile:
+ *                       type: string
+ *                       example: 9876543210
+ *                     role:
+ *                       type: string
+ *                       example: user
  *       400:
- *         description: Invalid OTP or already registered
+ *         description: Validation error or user already registered
  *       500:
- *         description: Internal Server Error
+ *         description: Internal server error
  */
 
 /**
  * @swagger
  * /api/passenger:
  *   get:
- *     summary: Get all passengers
+ *     summary: Get all passengers (Admin only)
  *     tags: [Passenger]
  *     security:
  *       - BearerAuth: []
- *     description: "Protected: accessible only by superadmin"
  *     responses:
  *       200:
- *         description: List of all passengers
+ *         description: List of passengers
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 success: { type: boolean, example: true }
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 count:
+ *                   type: integer
+ *                   example: 3
  *                 data:
  *                   type: array
  *                   items:
- *                     type: object
- *                     properties:
- *                       passengerId: { type: string, example: "NAA0239" }
- *                       name: { type: string, example: "Rohit Sharma" }
- *                       email: { type: string, example: "rohit@gmail.com" }
- *                       dateOfBirth: { type: string, example: "1995-04-10" }
- *                       mobile: { type: string, example: "9876543210" }
- *                       role: { type: string, example: "user" }
- *                       registrationDate: { type: string, example: "2025-10-12T12:30:00Z" }
+ *                     $ref: '#/components/schemas/Passenger'
  *       401:
  *         description: Unauthorized
- *       403:
- *         description: Forbidden (role not allowed)
  *       500:
- *         description: Internal Server Error
+ *         description: Internal server error
  */
 
 /**
  * @swagger
  * /api/passenger/{id}:
  *   get:
- *     summary: Get passenger by ID
+ *     summary: Get a passenger by ID (Admin only)
  *     tags: [Passenger]
  *     security:
  *       - BearerAuth: []
- *     description: "Protected: accessible only by superadmin"
  *     parameters:
- *       - in: path
- *         name: id
+ *       - name: id
+ *         in: path
  *         required: true
  *         schema:
  *           type: string
- *         description: Passenger ID
+ *           example: 670e77b9c9f32fbc27e15c00
  *     responses:
  *       200:
- *         description: Passenger data
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success: { type: boolean, example: true }
- *                 data:
- *                   type: object
- *                   properties:
- *                     passengerId: { type: string, example: "NAA0239" }
- *                     name: { type: string, example: "Rohit Sharma" }
- *                     email: { type: string, example: "rohit@gmail.com" }
- *                     dateOfBirth: { type: string, example: "1995-04-10" }
- *                     mobile: { type: string, example: "9876543210" }
- *                     role: { type: string, example: "user" }
- *                     registrationDate: { type: string, example: "2025-10-12T12:30:00Z" }
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden (role not allowed)
+ *         description: Passenger details
  *       404:
  *         description: Passenger not found
  *       500:
- *         description: Internal Server Error
+ *         description: Internal server error
  */
 
 /**
  * @swagger
  * /api/passenger/{id}:
  *   put:
- *     summary: Update passenger details
+ *     summary: Update a passenger (Admin only)
  *     tags: [Passenger]
  *     security:
  *       - BearerAuth: []
- *     description: "Protected: accessible only by superadmin"
  *     parameters:
- *       - in: path
- *         name: id
+ *       - name: id
+ *         in: path
  *         required: true
  *         schema:
  *           type: string
- *         description: Passenger ID
  *     requestBody:
- *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             properties:
- *               name: { type: string, example: "Rohit Sharma" }
- *               email: { type: string, example: "rohit@gmail.com" }
- *               dateOfBirth: { type: string, example: "1995-04-10" }
- *               mobile: { type: string, example: "9876543210" }
+ *             example:
+ *               name: "Updated Name"
+ *               email: "updated@example.com"
  *     responses:
  *       200:
  *         description: Passenger updated successfully
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden (role not allowed)
  *       404:
  *         description: Passenger not found
  *       500:
- *         description: Internal Server Error
+ *         description: Internal server error
  */
 
 /**
  * @swagger
  * /api/passenger/{id}:
  *   delete:
- *     summary: Delete passenger by ID
+ *     summary: Delete a passenger (Admin only)
  *     tags: [Passenger]
  *     security:
  *       - BearerAuth: []
- *     description: "Protected: accessible only by superadmin"
  *     parameters:
- *       - in: path
- *         name: id
+ *       - name: id
+ *         in: path
  *         required: true
  *         schema:
  *           type: string
- *         description: Passenger ID
  *     responses:
  *       200:
  *         description: Passenger deleted successfully
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden (role not allowed)
  *       404:
  *         description: Passenger not found
  *       500:
- *         description: Internal Server Error
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Passenger:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *           example: 670e77b9c9f32fbc27e15c00
+ *         passengerId:
+ *           type: string
+ *           example: ABC1234
+ *         name:
+ *           type: string
+ *           example: Ravi Kumar
+ *         email:
+ *           type: string
+ *           example: ravi@example.com
+ *         mobile:
+ *           type: string
+ *           example: 9876543210
+ *         role:
+ *           type: string
+ *           example: user
+ *         registrationDate:
+ *           type: string
+ *           example: 2025-10-17T10:45:00.000Z
  */

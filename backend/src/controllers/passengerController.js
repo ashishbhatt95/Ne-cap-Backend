@@ -1,31 +1,27 @@
 const Passenger = require("../models/passengerSchema");
-const Otp = require("../models/Otp");
+const jwt = require("jsonwebtoken");
 
 // Helper: Generate unique 7-char ID (3 letters + 4 digits)
 async function generateUniquePassengerId() {
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  function randomLetter() { return letters.charAt(Math.floor(Math.random() * letters.length)); }
-  function randomDigit() { return Math.floor(Math.random() * 10); }
+  const randomLetter = () => letters.charAt(Math.floor(Math.random() * letters.length));
+  const randomDigit = () => Math.floor(Math.random() * 10);
 
-  let unique = false;
-  let passengerId;
-
-  while (!unique) {
-    passengerId = "";
-    for (let i = 0; i < 3; i++) passengerId += randomLetter();
-    for (let i = 0; i < 4; i++) passengerId += randomDigit();
-
-    const existing = await Passenger.findOne({ passengerId });
-    if (!existing) unique = true;
-  }
+  let passengerId, existing;
+  do {
+    passengerId =
+      Array.from({ length: 3 }, randomLetter).join("") +
+      Array.from({ length: 4 }, randomDigit).join("");
+    existing = await Passenger.findOne({ passengerId });
+  } while (existing);
 
   return passengerId;
 }
 
 // -----------------------------
-// STEP 1️⃣ — Send OTP (static 123456)
+// REGISTER PASSENGER (no OTP)
 // -----------------------------
-exports.signupSendOtp = async (req, res) => {
+exports.registerPassenger = async (req, res) => {
   try {
     const { name, email, dateOfBirth, mobile } = req.body;
 
@@ -37,72 +33,6 @@ exports.signupSendOtp = async (req, res) => {
     }
 
     // Check if already registered
-    const existing = await Passenger.findOne({ mobile });
-    if (existing) {
-      return res.status(400).json({
-        success: false,
-        message: "Mobile number already registered",
-      });
-    }
-
-    // Generate static OTP
-    const otpCode = "123456";
-
-    // Save or update OTP in DB
-    await Otp.findOneAndUpdate(
-      { mobile },
-      { otp: otpCode, createdAt: new Date() },
-      { upsert: true, new: true }
-    );
-
-    // For demo purpose (no actual SMS)
-    console.log(`📱 OTP for ${mobile}: ${otpCode}`);
-
-    return res.json({
-      success: true,
-      message: "OTP sent successfully (static 123456)",
-    });
-  } catch (error) {
-    console.error("signupSendOtp error:", error.message);
-    return res.status(500).json({
-      success: false,
-      message: "Internal Server Error",
-    });
-  }
-};
-
-// -----------------------------
-// STEP 2️⃣ — Verify OTP & Register Passenger
-// -----------------------------
-exports.verifyOtpAndRegister = async (req, res) => {
-  try {
-    const { name, email, dateOfBirth, mobile, otp } = req.body;
-
-    if (!name || !email || !dateOfBirth || !mobile || !otp) {
-      return res.status(400).json({
-        success: false,
-        message: "All fields and OTP are required",
-      });
-    }
-
-    // Find OTP record
-    const otpRecord = await Otp.findOne({ mobile }).sort({ createdAt: -1 });
-    if (!otpRecord) {
-      return res.status(400).json({
-        success: false,
-        message: "OTP expired or not found",
-      });
-    }
-
-    // Validate OTP
-    if (otpRecord.otp !== otp) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid OTP",
-      });
-    }
-
-    // Recheck mobile not already used
     const existing = await Passenger.findOne({ mobile });
     if (existing) {
       return res.status(400).json({
@@ -123,19 +53,36 @@ exports.verifyOtpAndRegister = async (req, res) => {
       mobile,
       role: "user",
       registrationDate: new Date(),
-      status: "normal", // default status
+      status: "normal",
     });
 
     await passenger.save();
-    await Otp.deleteMany({ mobile }); // clean OTP
 
-    return res.json({
+    // Generate JWT Token
+    const token = jwt.sign(
+      {
+        id: passenger._id,
+        role: passenger.role,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" } // 7-day expiry
+    );
+
+    return res.status(201).json({
       success: true,
       message: "Passenger registered successfully",
-      data: passenger,
+      token,
+      data: {
+        id: passenger._id,
+        passengerId: passenger.passengerId,
+        name: passenger.name,
+        email: passenger.email,
+        mobile: passenger.mobile,
+        role: passenger.role,
+      },
     });
   } catch (error) {
-    console.error("verifyOtpAndRegister error:", error.message);
+    console.error("registerPassenger error:", error.message);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -151,6 +98,7 @@ exports.getAllPassengers = async (req, res) => {
     const passengers = await Passenger.find();
     return res.json({
       success: true,
+      count: passengers.length,
       data: passengers,
     });
   } catch (error) {
@@ -175,48 +123,6 @@ exports.getPassengerById = async (req, res) => {
     return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
-
-// -----------------------------
-//  GET LEADERBOARD (Unlimited)
-// -----------------------------
-
-exports.getLeaderboard = async (req, res) => {
-  try {
-    const leaderboard = await Passenger.find({ status: "buyer" }) // Only buyers
-      .sort({ bookingCount: -1 })
-      .select("passengerId name mobile status registrationDate bookingCount role"); // Only required fields
-
-    return res.json({
-      success: true,
-      count: leaderboard.length,
-      data: leaderboard,
-    });
-  } catch (error) {
-    console.error("getLeaderboard error:", error.message);
-    return res.status(500).json({ success: false, message: "Internal Server Error" });
-  }
-};
-
-// -----------------------------
-// 💼 GET ALL BUYERS
-// -----------------------------
-exports.getAllBuyers = async (req, res) => {
-  try {
-    const buyers = await Passenger.find({ status: "buyer" })
-      .sort({ createdAt: -1 })
-      .select("passengerId name email status mobile bookingCount registrationDate");
-
-    return res.json({
-      success: true,
-      count: buyers.length,
-      data: buyers,
-    });
-  } catch (error) {
-    console.error("getAllBuyers error:", error.message);
-    return res.status(500).json({ success: false, message: "Internal Server Error" });
-  }
-};
-
 
 // -----------------------------
 // UPDATE PASSENGER
@@ -254,6 +160,46 @@ exports.deletePassenger = async (req, res) => {
     return res.json({ success: true, message: "Passenger deleted successfully" });
   } catch (error) {
     console.error("deletePassenger error:", error.message);
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+// -----------------------------
+// GET LEADERBOARD (Buyers Only)
+// -----------------------------
+exports.getLeaderboard = async (req, res) => {
+  try {
+    const leaderboard = await Passenger.find({ status: "buyer" })
+      .sort({ bookingCount: -1 })
+      .select("passengerId name mobile status registrationDate bookingCount role");
+
+    return res.json({
+      success: true,
+      count: leaderboard.length,
+      data: leaderboard,
+    });
+  } catch (error) {
+    console.error("getLeaderboard error:", error.message);
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+// -----------------------------
+// GET ALL BUYERS
+// -----------------------------
+exports.getAllBuyers = async (req, res) => {
+  try {
+    const buyers = await Passenger.find({ status: "buyer" })
+      .sort({ createdAt: -1 })
+      .select("passengerId name email status mobile bookingCount registrationDate");
+
+    return res.json({
+      success: true,
+      count: buyers.length,
+      data: buyers,
+    });
+  } catch (error) {
+    console.error("getAllBuyers error:", error.message);
     return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
