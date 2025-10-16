@@ -1,4 +1,3 @@
-// models/Superadmin.model.js
 const mongoose = require("mongoose");
 
 const SuperadminSchema = new mongoose.Schema({

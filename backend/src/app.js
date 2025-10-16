@@ -21,11 +21,11 @@ app.use("/api/vehicle", vehicleRoutes);
 const riderRoutes = require("./routes/riderRoutes");
 app.use("/api/rider", riderRoutes);
 
-const authRoutes = require("./routes/authRoutes");
-app.use("/api/auth", authRoutes);
-
 const bookingRoutes = require("./routes/bookingRoutes");
 app.use("/api/booking", bookingRoutes);
+
+const adminAuthRoutes = require("./routes/adminAuthRoutes");
+app.use("/api/admin/auth", adminAuthRoutes);
 
 swaggerDocs(app);
 
