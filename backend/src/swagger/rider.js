@@ -2,14 +2,76 @@
  * @swagger
  * tags:
  *   name: Rider
- *   description: Rider management and authentication
+ *   description: Rider management, OTP authentication, registration, approval, and reviews
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Rider:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: MongoDB ID
+ *         riderId:
+ *           type: string
+ *           example: "XYZ1234"
+ *         name:
+ *           type: string
+ *         dob:
+ *           type: string
+ *           format: date
+ *         fatherName:
+ *           type: string
+ *         motherName:
+ *           type: string
+ *         email:
+ *           type: string
+ *         mobile:
+ *           type: string
+ *         aadharNumber:
+ *           type: string
+ *         panNumber:
+ *           type: string
+ *         address:
+ *           type: string
+ *         aadharFront:
+ *           type: string
+ *           format: url
+ *         aadharBack:
+ *           type: string
+ *           format: url
+ *         selfie:
+ *           type: string
+ *           format: url
+ *         otpVerified:
+ *           type: boolean
+ *         isSubmitted:
+ *           type: boolean
+ *         isApproved:
+ *           type: boolean
+ *         role:
+ *           type: string
+ *         registrationDate:
+ *           type: string
+ *           format: date-time
+ *         reviews:
+ *           type: array
+ *           items:
+ *             type: integer
+ *         reviewCount:
+ *           type: integer
+ *         averageRating:
+ *           type: number
  */
 
 /**
  * @swagger
  * /api/rider/send-otp:
  *   post:
- *     summary: Send OTP to rider's mobile number
+ *     summary: Send OTP to rider's mobile
  *     tags: [Rider]
  *     requestBody:
  *       required: true
@@ -17,26 +79,24 @@
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - mobile
  *             properties:
  *               mobile:
  *                 type: string
- *                 example: "9876543210"
+ *                 example: "+911234567890"
  *     responses:
  *       200:
  *         description: OTP sent successfully
  *       400:
- *         description: Missing or invalid mobile number
+ *         description: Mobile number required
  *       500:
- *         description: Internal server error
+ *         description: Server error
  */
 
 /**
  * @swagger
  * /api/rider/verify-otp:
  *   post:
- *     summary: Verify OTP and check rider registration
+ *     summary: Verify OTP and check registration
  *     tags: [Rider]
  *     requestBody:
  *       required: true
@@ -44,30 +104,25 @@
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - mobile
- *               - otp
  *             properties:
  *               mobile:
  *                 type: string
- *                 example: "9876543210"
  *               otp:
  *                 type: string
- *                 example: "123456"
  *     responses:
  *       200:
- *         description: OTP verified successfully
+ *         description: OTP verified, returns token if registered
  *       400:
  *         description: Invalid OTP or missing fields
  *       500:
- *         description: Internal server error
+ *         description: Server error
  */
 
 /**
  * @swagger
  * /api/rider/register:
  *   post:
- *     summary: Register a new rider (with document uploads)
+ *     summary: Register a new rider
  *     tags: [Rider]
  *     requestBody:
  *       required: true
@@ -75,43 +130,26 @@
  *         multipart/form-data:
  *           schema:
  *             type: object
- *             required:
- *               - name
- *               - dob
- *               - fatherName
- *               - motherName
- *               - email
- *               - mobile
- *               - aadharNumber
- *               - address
  *             properties:
  *               name:
  *                 type: string
- *                 example: "Rohit Sharma"
  *               dob:
  *                 type: string
- *                 example: "1994-08-15"
+ *                 format: date
  *               fatherName:
  *                 type: string
- *                 example: "Mohan Sharma"
  *               motherName:
  *                 type: string
- *                 example: "Kiran Sharma"
  *               email:
  *                 type: string
- *                 example: "rohit@example.com"
  *               mobile:
  *                 type: string
- *                 example: "9876543210"
  *               aadharNumber:
  *                 type: string
- *                 example: "123456789012"
  *               panNumber:
  *                 type: string
- *                 example: "ABCDE1234F"
  *               address:
  *                 type: string
- *                 example: "221B Baker Street, Delhi"
  *               aadharFront:
  *                 type: string
  *                 format: binary
@@ -124,41 +162,10 @@
  *     responses:
  *       201:
  *         description: Rider registered successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 token:
- *                   type: string
- *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
- *                 rider:
- *                   $ref: '#/components/schemas/Rider'
  *       400:
- *         description: Missing or invalid fields
+ *         description: Missing fields or already registered
  *       500:
- *         description: Internal server error
- */
-
-/**
- * @swagger
- * /api/rider:
- *   get:
- *     summary: Get all riders (Admin only)
- *     tags: [Rider]
- *     security:
- *       - BearerAuth: []
- *     responses:
- *       200:
- *         description: List of all riders
- *       401:
- *         description: Unauthorized
- *       500:
- *         description: Internal server error
+ *         description: Server error
  */
 
 /**
@@ -173,11 +180,8 @@
  *       200:
  *         description: List of approved riders
  *       500:
- *         description: Internal server error
- */
-
-/**
- * @swagger
+ *         description: Server error
+ *
  * /api/rider/pending:
  *   get:
  *     summary: Get all pending riders (Admin only)
@@ -188,14 +192,26 @@
  *       200:
  *         description: List of pending riders
  *       500:
- *         description: Internal server error
+ *         description: Server error
  */
 
 /**
  * @swagger
+ * /api/rider:
+ *   get:
+ *     summary: Get all riders (Admin only)
+ *     tags: [Rider]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of riders
+ *       500:
+ *         description: Server error
+ *
  * /api/rider/{id}:
  *   get:
- *     summary: Get rider details by ID
+ *     summary: Get a rider by ID
  *     tags: [Rider]
  *     security:
  *       - BearerAuth: []
@@ -205,21 +221,15 @@
  *         required: true
  *         schema:
  *           type: string
- *           example: 670e77b9c9f32fbc27e15c00
  *     responses:
  *       200:
- *         description: Rider details
+ *         description: Rider found
  *       404:
  *         description: Rider not found
  *       500:
- *         description: Internal server error
- */
-
-/**
- * @swagger
- * /api/rider/{id}:
+ *         description: Server error
  *   put:
- *     summary: Update rider details
+ *     summary: Update a rider by ID
  *     tags: [Rider]
  *     security:
  *       - BearerAuth: []
@@ -234,23 +244,15 @@
  *         application/json:
  *           schema:
  *             type: object
- *             example:
- *               name: "Updated Rider Name"
- *               email: "updated@example.com"
  *     responses:
  *       200:
  *         description: Rider updated successfully
  *       404:
  *         description: Rider not found
  *       500:
- *         description: Internal server error
- */
-
-/**
- * @swagger
- * /api/rider/{id}:
+ *         description: Server error
  *   delete:
- *     summary: Delete a rider (Admin only)
+ *     summary: Delete a rider by ID (Admin only)
  *     tags: [Rider]
  *     security:
  *       - BearerAuth: []
@@ -266,7 +268,7 @@
  *       404:
  *         description: Rider not found
  *       500:
- *         description: Internal server error
+ *         description: Server error
  */
 
 /**
@@ -284,31 +286,32 @@
  *         schema:
  *           type: string
  *     requestBody:
+ *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - action
  *             properties:
  *               action:
  *                 type: string
- *                 enum: [approve, reject]
- *                 example: approve
+ *                 description: "approve or reject"
+ *                 example: "approve"
  *     responses:
  *       200:
- *         description: Rider approved or rejected
+ *         description: Rider approved/rejected successfully
  *       404:
  *         description: Rider not found
+ *       400:
+ *         description: Invalid action
  *       500:
- *         description: Internal server error
+ *         description: Server error
  */
 
 /**
  * @swagger
  * /api/rider/{riderId}/review:
  *   post:
- *     summary: Add a review for a rider (User only)
+ *     summary: Add a review to a rider (Passenger only)
  *     tags: [Rider]
  *     security:
  *       - BearerAuth: []
@@ -324,12 +327,11 @@
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - rating
  *             properties:
  *               rating:
  *                 type: integer
- *                 example: 5
+ *                 minimum: 1
+ *                 maximum: 5
  *     responses:
  *       200:
  *         description: Review added successfully
@@ -338,60 +340,5 @@
  *       404:
  *         description: Rider not found
  *       500:
- *         description: Internal server error
+ *         description: Server error
  */
-
-/**
- * @swagger
- * components:
- *   schemas:
- *     Rider:
- *       type: object
- *       properties:
- *         _id:
- *           type: string
- *           example: 670e77b9c9f32fbc27e15c00
- *         riderId:
- *           type: string
- *           example: XYZ1234
- *         name:
- *           type: string
- *           example: Rohit Sharma
- *         email:
- *           type: string
- *           example: rohit@example.com
- *         mobile:
- *           type: string
- *           example: 9876543210
- *         aadharNumber:
- *           type: string
- *           example: 123456789012
- *         panNumber:
- *           type: string
- *           example: ABCDE1234F
- *         address:
- *           type: string
- *           example: 221B Baker Street, Delhi
- *         aadharFront:
- *           type: string
- *           example: https://res.cloudinary.com/demo/aadharFront.jpg
- *         aadharBack:
- *           type: string
- *           example: https://res.cloudinary.com/demo/aadharBack.jpg
- *         selfie:
- *           type: string
- *           example: https://res.cloudinary.com/demo/selfie.jpg
- *         isApproved:
- *           type: boolean
- *           example: false
- *         registrationDate:
- *           type: string
- *           example: 2025-10-17T12:00:00.000Z
- *         averageRating:
- *           type: number
- *           example: 4.8
- *         reviewCount:
- *           type: number
- *           example: 25
- */
-

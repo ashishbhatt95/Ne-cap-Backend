@@ -28,6 +28,9 @@ app.use("/api/passenger", passengerRoutes);
 const riderRoutes = require("./routes/riderRoutes");
 app.use("/api/rider", riderRoutes);
 
+const businessInfoRoutes = require("./routes/businessInfoRoutes");
+app.use("/api/admin", businessInfoRoutes);
+
 swaggerDocs(app);
 
 // Root endpoint

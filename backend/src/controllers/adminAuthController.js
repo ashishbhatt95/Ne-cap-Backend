@@ -70,3 +70,72 @@ exports.verifyAdminOtpAndLogin = async (req, res) => {
     return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
+
+// STEP 3: Send OTP for Mobile Number Change
+exports.sendOtpForMobileChange = async (req, res) => {
+  try {
+    const { newMobile } = req.body;
+    const { id } = req.user; // ✅ comes from roleAuthorization
+
+    if (!newMobile) {
+      return res
+        .status(400)
+        .json({ success: false, message: "New mobile number is required" });
+    }
+
+    const existing = await Superadmin.findOne({ mobile: newMobile });
+    if (existing) {
+      return res
+        .status(400)
+        .json({ success: false, message: "This mobile number is already in use" });
+    }
+
+    // Static OTP for testing
+    const otp = "123456";
+
+    // Later: replace with SMS integration
+    return res.status(200).json({
+      success: true,
+      message: `OTP sent successfully to ${newMobile}`,
+      otp, // for testing only
+    });
+  } catch (err) {
+    console.error("sendOtpForMobileChange Error:", err.message);
+    return res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+// STEP 4: Verify OTP and Update Mobile
+exports.verifyOtpAndChangeMobile = async (req, res) => {
+  try {
+    const { newMobile, otp } = req.body;
+    const { id } = req.user; // ✅ from middleware
+
+    if (!newMobile || !otp) {
+      return res
+        .status(400)
+        .json({ success: false, message: "New mobile and OTP are required" });
+    }
+
+    if (otp !== "123456") {
+      return res.status(400).json({ success: false, message: "Invalid OTP" });
+    }
+
+    const admin = await Superadmin.findById(id);
+    if (!admin) {
+      return res.status(404).json({ success: false, message: "Admin not found" });
+    }
+
+    admin.mobile = newMobile;
+    await admin.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Mobile number updated successfully",
+      newMobile,
+    });
+  } catch (err) {
+    console.error("verifyOtpAndChangeMobile Error:", err.message);
+    return res.status(500).json({ success: false, message: "Server Error" });
+  }
+};

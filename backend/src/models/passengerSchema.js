@@ -11,6 +11,7 @@ const PassengerSchema = new mongoose.Schema(
     registrationDate: { type: Date, default: Date.now },
     status: { type: String, enum: ["normal", "buyer"], default: "normal" },
     bookingCount: { type: Number, default: 0 },
+    bookingHistory: [{ type: mongoose.Schema.Types.ObjectId, ref: "Booking" }],
   },
   { timestamps: true }
 );

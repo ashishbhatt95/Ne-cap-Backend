@@ -3,22 +3,76 @@ const router = express.Router();
 const bookingController = require("../controllers/bookingController");
 const { roleAuthorization } = require("../middlewares/authMiddleware");
 
-// User creates a new booking
-router.post("/create", roleAuthorization(["user"]), bookingController.createBooking);
+// -------------------------------
+// 1️⃣ User creates a new booking
+// -------------------------------
+router.post(
+  "/create",
+  roleAuthorization(["user"]),
+  bookingController.createBooking
+);
 
-// Admin: Get all bookings
-router.get("/", roleAuthorization(["superadmin", "vendor"]), bookingController.getAllBookings);
+// -------------------------------
+// 2️⃣ Admin / Vendor: Get all bookings
+// -------------------------------
+router.get(
+  "/",
+  roleAuthorization(["superadmin", "vendor"]),
+  bookingController.getAllBookings
+);
 
-// Get booking by ID (any authenticated role can view)
-router.get("/:id", roleAuthorization(["user", "rider", "superadmin", "vendor"]), bookingController.getBookingById);
+// -------------------------------
+// 3️⃣ Get booking by ID (Role-based)
+// -------------------------------
+router.get(
+  "/:id",
+  roleAuthorization(["user", "rider", "superadmin", "vendor"]),
+  bookingController.getBookingById
+);
 
-// Admin: Assign rider manually
-router.put("/:id/assign", roleAuthorization(["superadmin", "vendor"]), bookingController.assignRider);
+// -------------------------------
+// 4️⃣ Admin: Get candidate riders for booking
+// -------------------------------
+router.get(
+  "/candidate-riders/:id",
+  roleAuthorization(["superadmin", "vendor"]),
+  bookingController.getCandidateRiders
+);
 
-// Update booking status
-router.put("/:id/status", roleAuthorization(["rider", "superadmin", "vendor"]), bookingController.updateBookingStatus);
+// -------------------------------
+// 5️⃣ Admin / Vendor: Assign rider manually
+// -------------------------------
+router.put(
+  "/assign/:id",
+  roleAuthorization(["superadmin", "vendor"]),
+  bookingController.assignRider
+);
 
-// Cancel booking
-router.put("/:id/cancel", roleAuthorization(["user", "rider", "superadmin", "vendor"]), bookingController.cancelBooking);
+// -------------------------------
+// 6️⃣ Rider / Admin / Vendor: Update booking status
+// -------------------------------
+router.put(
+  "/status/:id",
+  roleAuthorization(["rider", "superadmin", "vendor"]),
+  bookingController.updateBookingStatus
+);
+
+// -------------------------------
+// 7️⃣ User / Rider / Admin / Vendor: Cancel booking
+// -------------------------------
+router.put(
+  "/cancel/:id",
+  roleAuthorization(["user", "rider", "superadmin", "vendor"]),
+  bookingController.cancelBooking
+);
+
+// -------------------------------
+// 8️⃣ User: Submit review after ride completion
+// -------------------------------
+router.post(
+  "/review/:id",
+  roleAuthorization(["user"]),
+  bookingController.submitReview
+);
 
 module.exports = router;

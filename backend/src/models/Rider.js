@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const RiderSchema = new mongoose.Schema(
   {
-    riderId: { type: String, unique: true }, // Unique Rider ID
+    riderId: { type: String, unique: true },
     name: String,
     dob: Date,
     fatherName: String,
@@ -23,7 +23,10 @@ const RiderSchema = new mongoose.Schema(
     reviewCount: { type: Number, default: 0 },
     averageRating: { type: Number, default: 0 },
     vehicleCount: { type: Number, default: 0 },
-    registrationDate: { type: Date, default: Date.now }, // Rider registration date
+    registrationDate: { type: Date, default: Date.now },
+    currentBooking: { type: mongoose.Schema.Types.ObjectId, ref: "Booking", default: null },
+    availabilityStatus: { type: String, enum: ["available", "busy", "offline"], default: "available" },
+    bookingHistory: [{ type: mongoose.Schema.Types.ObjectId, ref: "Booking" }],
   },
   { timestamps: true }
 );
