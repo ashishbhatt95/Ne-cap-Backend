@@ -125,14 +125,54 @@ exports.getPassengerById = async (req, res) => {
 };
 
 // -----------------------------
-// UPDATE PASSENGER
+// GET PASSENGER BY TOKEN
 // -----------------------------
-exports.updatePassenger = async (req, res) => {
+exports.getPassengerProfile = async (req, res) => {
   try {
-    const { id } = req.params;
-    const updateData = req.body;
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.toLowerCase().startsWith("bearer ")) {
+      return res.status(401).json({ success: false, message: "Unauthorized: No token provided" });
+    }
 
-    const updatedPassenger = await Passenger.findByIdAndUpdate(id, updateData, {
+    const token = authHeader.split(" ")[1].trim();
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // only allow role = user (passenger)
+    if (decoded.role.toLowerCase() !== "user") {
+      return res.status(403).json({ success: false, message: "Forbidden: Access denied" });
+    }
+
+    const passenger = await Passenger.findById(decoded.id);
+    if (!passenger) {
+      return res.status(404).json({ success: false, message: "Passenger not found" });
+    }
+
+    return res.json({ success: true, data: passenger });
+  } catch (error) {
+    console.error("getPassengerProfile error:", error.message);
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+// -----------------------------
+// UPDATE PASSENGER BY TOKEN
+// -----------------------------
+exports.updatePassengerProfile = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.toLowerCase().startsWith("bearer ")) {
+      return res.status(401).json({ success: false, message: "Unauthorized: No token provided" });
+    }
+
+    const token = authHeader.split(" ")[1].trim();
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (decoded.role.toLowerCase() !== "user") {
+      return res.status(403).json({ success: false, message: "Forbidden: Access denied" });
+    }
+
+    const updateData = req.body;
+    const updatedPassenger = await Passenger.findByIdAndUpdate(decoded.id, updateData, {
       new: true,
     });
 
@@ -142,7 +182,7 @@ exports.updatePassenger = async (req, res) => {
 
     return res.json({ success: true, data: updatedPassenger });
   } catch (error) {
-    console.error("updatePassenger error:", error.message);
+    console.error("updatePassengerProfile error:", error.message);
     return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };

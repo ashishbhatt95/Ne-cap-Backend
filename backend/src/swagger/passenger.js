@@ -2,7 +2,7 @@
  * @swagger
  * tags:
  *   name: Passenger
- *   description: Passenger management, OTP authentication, and leaderboard
+ *   description: Passenger management, authentication, and profile operations
  */
 
 /**
@@ -14,7 +14,6 @@
  *       properties:
  *         _id:
  *           type: string
- *           description: MongoDB generated ID
  *         passengerId:
  *           type: string
  *           example: "ABC1234"
@@ -26,11 +25,11 @@
  *           example: "john@example.com"
  *         mobile:
  *           type: string
- *           example: "1234567890"
+ *           example: "9876543210"
  *         dateOfBirth:
  *           type: string
  *           format: date
- *           example: "1990-01-01"
+ *           example: "1995-04-23"
  *         role:
  *           type: string
  *           example: "user"
@@ -42,14 +41,20 @@
  *           format: date-time
  *         bookingCount:
  *           type: integer
- *           example: 5
+ *           example: 0
+ * 
+ *   securitySchemes:
+ *     BearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
  */
 
 /**
  * @swagger
  * /api/passenger/send-otp:
  *   post:
- *     summary: Send OTP to passenger's mobile
+ *     summary: Send OTP to passenger's mobile number
  *     tags: [Passenger]
  *     requestBody:
  *       required: true
@@ -60,23 +65,12 @@
  *             properties:
  *               mobile:
  *                 type: string
- *                 example: "1234567890"
+ *                 example: "9876543210"
  *     responses:
  *       200:
  *         description: OTP sent successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: OTP sent successfully
  *       400:
- *         description: Mobile number required
+ *         description: Invalid or missing mobile number
  *       500:
  *         description: Server error
  */
@@ -85,7 +79,7 @@
  * @swagger
  * /api/passenger/verify-otp:
  *   post:
- *     summary: Verify passenger OTP and check registration
+ *     summary: Verify passenger OTP and check if registered
  *     tags: [Passenger]
  *     requestBody:
  *       required: true
@@ -96,29 +90,13 @@
  *             properties:
  *               mobile:
  *                 type: string
- *                 example: "1234567890"
+ *                 example: "9876543210"
  *               otp:
  *                 type: string
  *                 example: "123456"
  *     responses:
  *       200:
- *         description: OTP verified
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 isRegister:
- *                   type: boolean
- *                 mobile:
- *                   type: string
- *                 message:
- *                   type: string
- *                 token:
- *                   type: string
- *                   nullable: true
+ *         description: OTP verified successfully
  *       400:
  *         description: Invalid OTP or missing fields
  *       500:
@@ -126,17 +104,10 @@
  */
 
 /**
- * -------------------------------
- * PASSENGER REGISTRATION (PUBLIC)
- * -------------------------------
- */
-
-/**
  * @swagger
  * /api/passenger/register:
  *   post:
- *     summary: Register a new passenger (no OTP)
- *     description: Used after OTP verification if the passenger is registering for the first time.
+ *     summary: Register a new passenger (after OTP verification)
  *     tags: [Passenger]
  *     requestBody:
  *       required: true
@@ -158,7 +129,6 @@
  *                 example: "ravi@example.com"
  *               dateOfBirth:
  *                 type: string
- *                 format: date
  *                 example: "1998-05-22"
  *               mobile:
  *                 type: string
@@ -166,28 +136,62 @@
  *     responses:
  *       201:
  *         description: Passenger registered successfully
- *         content:
- *           application/json:
- *             example:
- *               success: true
- *               message: "Passenger registered successfully"
- *               token: "jwt-token-here"
- *               data:
- *                 id: "6711cfd0a5f16e01c4b2e9a9"
- *                 passengerId: "ABC1234"
- *                 name: "Ravi Sharma"
- *                 email: "ravi@example.com"
- *                 mobile: "9876543210"
- *                 role: "user"
  *       400:
  *         description: Missing fields or mobile already registered
- *         content:
- *           application/json:
- *             example:
- *               success: false
- *               message: "Mobile number already registered"
  *       500:
  *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /api/passenger/me:
+ *   get:
+ *     summary: Get logged-in passenger profile (User only)
+ *     tags: [Passenger]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Passenger profile retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Passenger'
+ *       401:
+ *         description: Unauthorized - Token missing or invalid
+ *       403:
+ *         description: Forbidden - Not a passenger
+ *       500:
+ *         description: Internal server error
+ *   put:
+ *     summary: Update logged-in passenger profile (User only)
+ *     tags: [Passenger]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               dateOfBirth:
+ *                 type: string
+ *               mobile:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Passenger profile updated successfully
+ *       404:
+ *         description: Passenger not found
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
  */
 
 /**
@@ -200,31 +204,20 @@
  *       - BearerAuth: []
  *     responses:
  *       200:
- *         description: List of passengers
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 count:
- *                   type: integer
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Passenger'
+ *         description: List of all passengers
  *       401:
  *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Admin only
  *       500:
- *         description: Server error
+ *         description: Internal server error
  */
 
 /**
  * @swagger
  * /api/passenger/{id}:
  *   get:
- *     summary: Get a single passenger by ID (User only)
+ *     summary: Get passenger by ID (User only)
  *     tags: [Passenger]
  *     security:
  *       - BearerAuth: []
@@ -234,54 +227,9 @@
  *         required: true
  *         schema:
  *           type: string
- *           example: "64f123abcd456ef7890"
  *     responses:
  *       200:
- *         description: Passenger retrieved
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   $ref: '#/components/schemas/Passenger'
- *       404:
- *         description: Passenger not found
- *       500:
- *         description: Server error
- *   put:
- *     summary: Update passenger by ID (User only)
- *     tags: [Passenger]
- *     security:
- *       - BearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *               email:
- *                 type: string
- *               mobile:
- *                 type: string
- *               dateOfBirth:
- *                 type: string
- *               status:
- *                 type: string
- *     responses:
- *       200:
- *         description: Passenger updated
+ *         description: Passenger retrieved successfully
  *       404:
  *         description: Passenger not found
  *       500:
@@ -299,7 +247,7 @@
  *           type: string
  *     responses:
  *       200:
- *         description: Passenger deleted
+ *         description: Passenger deleted successfully
  *       404:
  *         description: Passenger not found
  *       500:
@@ -310,13 +258,15 @@
  * @swagger
  * /api/passenger/leaderboard:
  *   get:
- *     summary: Get passenger leaderboard (Admin only, buyers only)
+ *     summary: Get top buyers by booking count (Admin only)
  *     tags: [Passenger]
  *     security:
  *       - BearerAuth: []
  *     responses:
  *       200:
- *         description: Leaderboard retrieved
+ *         description: Leaderboard retrieved successfully
+ *       403:
+ *         description: Forbidden
  *       500:
  *         description: Server error
  */
@@ -325,13 +275,15 @@
  * @swagger
  * /api/passenger/buyers:
  *   get:
- *     summary: Get all buyers (Admin only)
+ *     summary: Get all passengers with buyer status (Admin only)
  *     tags: [Passenger]
  *     security:
  *       - BearerAuth: []
  *     responses:
  *       200:
- *         description: Buyers list retrieved
+ *         description: Buyers retrieved successfully
+ *       403:
+ *         description: Forbidden
  *       500:
  *         description: Server error
  */
