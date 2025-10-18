@@ -509,3 +509,55 @@ exports.rejectBookingOffer = async (req, res) => {
     res.status(500).json({ message: "Failed to reject booking" });
   }
 };
+
+// ✅ Passenger: Get Completed Booking History
+exports.getUserBookingHistory = async (req, res) => {
+  try {
+    const passengerId = req.user?.id;
+    if (!passengerId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const bookings = await Booking.find({
+      passengerId,
+      status: "completed",
+    })
+      .populate("riderId", "name mobile averageRating")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: bookings.length,
+      bookings,
+    });
+  } catch (error) {
+    console.error("Error fetching user history:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// ✅ Rider: Get Completed Booking History
+exports.getRiderBookingHistory = async (req, res) => {
+  try {
+    const riderId = req.user?.id;
+    if (!riderId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const bookings = await Booking.find({
+      riderId,
+      status: "completed",
+    })
+      .populate("passengerId", "name mobile")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: bookings.length,
+      bookings,
+    });
+  } catch (error) {
+    console.error("Error fetching rider history:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};

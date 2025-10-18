@@ -84,4 +84,17 @@ router.put(
   bookingController.cancelBooking
 );
 
+// Passenger: Get Booking History
+router.get(
+  "/history/user",
+  roleAuthorization(["user"]),
+  bookingController.getUserBookingHistory
+);
+
+// Rider: Get Booking History
+router.get(
+  "/history/rider",
+  roleAuthorization(["rider"]),
+  bookingController.getRiderBookingHistory
+);
 module.exports = router;

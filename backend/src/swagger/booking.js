@@ -387,6 +387,133 @@
 
 /**
  * @swagger
+ * /api/booking/history/user:
+ *   get:
+ *     summary: Get completed ride history for a passenger
+ *     description: Returns all rides that the logged-in passenger has completed.
+ *     tags: [Booking]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved passenger's completed ride history
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 count:
+ *                   type: integer
+ *                   example: 3
+ *                 bookings:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                         example: 6710a5bf3f6c8d001234abcd
+ *                       pickupLocation:
+ *                         type: string
+ *                         example: "Connaught Place"
+ *                       dropLocation:
+ *                         type: string
+ *                         example: "Indira Gandhi International Airport"
+ *                       finalPrice:
+ *                         type: number
+ *                         example: 850
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-10-18T10:23:54.000Z"
+ *                       status:
+ *                         type: string
+ *                         example: "completed"
+ *                       riderId:
+ *                         type: object
+ *                         properties:
+ *                           name:
+ *                             type: string
+ *                             example: "Ravi Kumar"
+ *                           mobile:
+ *                             type: string
+ *                             example: "9990011223"
+ *                           averageRating:
+ *                             type: number
+ *                             example: 4.7
+ *       401:
+ *         description: Unauthorized — JWT token missing or invalid
+ *       500:
+ *         description: Server error
+ */
+ 
+/**
+ * @swagger
+ * /api/booking/history/rider:
+ *   get:
+ *     summary: Get completed ride history for a rider
+ *     description: Returns all rides that the logged-in rider has completed.
+ *     tags: [Booking]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved rider's completed ride history
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 count:
+ *                   type: integer
+ *                   example: 5
+ *                 bookings:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                         example: 6710a6ef3f6c8d002233bcde
+ *                       pickupLocation:
+ *                         type: string
+ *                         example: "Cyber City"
+ *                       dropLocation:
+ *                         type: string
+ *                         example: "Delhi Airport"
+ *                       finalPrice:
+ *                         type: number
+ *                         example: 900
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-10-17T18:32:15.000Z"
+ *                       status:
+ *                         type: string
+ *                         example: "completed"
+ *                       passengerId:
+ *                         type: object
+ *                         properties:
+ *                           name:
+ *                             type: string
+ *                             example: "Amit Verma"
+ *                           mobile:
+ *                             type: string
+ *                             example: "9876543210"
+ *       401:
+ *         description: Unauthorized — JWT token missing or invalid
+ *       500:
+ *         description: Server error
+ */
+
+/**
+ * @swagger
  * components:
  *   schemas:
  *     Booking:
