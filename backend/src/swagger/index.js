@@ -15,8 +15,14 @@ Passenger & Rider APIs with OTP, Cloudinary uploads, and MongoDB integration.
       `,
     },
     servers: [
-      { url: "http://localhost:5000", description: "Local Development" },
-      { url: "https://ne-cap-backend.onrender.com", description: "Production Server" },
+      {
+        url: "http://localhost:5000",
+        description: "Local Development",
+      },
+      {
+        url: "https://ne-cap-backend.onrender.com",
+        description: "Production Server",
+      },
     ],
     components: {
       securitySchemes: {
@@ -24,20 +30,29 @@ Passenger & Rider APIs with OTP, Cloudinary uploads, and MongoDB integration.
           type: "http",
           scheme: "bearer",
           bearerFormat: "JWT",
-          description: "Enter your JWT token here. Just paste the token, no 'Bearer ' needed",
+          description:
+            "Enter your JWT token here. Just paste the token — no 'Bearer ' prefix needed.",
         },
       },
     },
-    security: [{ BearerAuth: [] }], // applies globally
+    security: [{ BearerAuth: [] }],
   },
-  apis: ["./src/swagger/*.js"], // scan all Swagger route docs
+  apis: ["./src/swagger/*.js"], // all swagger doc files
 };
 
 const swaggerSpec = swaggerJsdoc(options);
 
 const swaggerDocs = (app) => {
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-  console.log("📘 Swagger Docs: http://localhost:5000/api-docs");
+
+  // Detect actual host dynamically
+  const port = process.env.PORT || 5000;
+  const baseUrl =
+    process.env.NODE_ENV === "production"
+      ? "https://ne-cap-backend.onrender.com"
+      : `http://localhost:${port}`;
+
+  console.log(`📘 Swagger Docs available at: ${baseUrl}/api-docs`);
 };
 
 module.exports = swaggerDocs;
