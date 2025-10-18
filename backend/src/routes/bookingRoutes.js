@@ -31,7 +31,7 @@ router.get(
 );
 
 // -------------------------------
-// 4️⃣ Admin: Get candidate riders for booking
+// 4️⃣ Admin: Get ALL available riders (no pre-filtering)
 // -------------------------------
 router.get(
   "/candidate-riders/:id",
@@ -40,7 +40,7 @@ router.get(
 );
 
 // -------------------------------
-// 5️⃣ Admin / Vendor: Assign rider manually
+// 5️⃣ Admin / Vendor: Send offer to multiple riders
 // -------------------------------
 router.put(
   "/assign/:id",
@@ -49,7 +49,25 @@ router.put(
 );
 
 // -------------------------------
-// 6️⃣ Rider / Admin / Vendor: Update booking status
+// 6️⃣ Rider: Accept booking offer (First come, first served)
+// -------------------------------
+router.put(
+  "/accept/:id",
+  roleAuthorization(["rider"]),
+  bookingController.acceptBookingOffer
+);
+
+// -------------------------------
+// 7️⃣ Rider: Reject booking offer
+// -------------------------------
+router.put(
+  "/reject/:id",
+  roleAuthorization(["rider"]),
+  bookingController.rejectBookingOffer
+);
+
+// -------------------------------
+// 8️⃣ Rider / Admin / Vendor: Update booking status
 // -------------------------------
 router.put(
   "/status/:id",
@@ -58,7 +76,7 @@ router.put(
 );
 
 // -------------------------------
-// 7️⃣ User / Rider / Admin / Vendor: Cancel booking
+// 9️⃣ User / Rider / Admin / Vendor: Cancel booking
 // -------------------------------
 router.put(
   "/cancel/:id",
@@ -67,7 +85,7 @@ router.put(
 );
 
 // -------------------------------
-// 8️⃣ User: Submit review after ride completion
+// 🔟 User: Submit review after ride completion
 // -------------------------------
 router.post(
   "/review/:id",
