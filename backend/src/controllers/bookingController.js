@@ -2,6 +2,7 @@ const Booking = require("../models/Booking");
 const VehicleCategory = require("../models/VehicleCategory");
 const Passenger = require("../models/passengerSchema");
 const Rider = require("../models/Rider");
+const { sendNotification, notifyAdmins } = require("../utils/notificationHelper");
 
 // -------------------------------
 // 1️⃣ Create new booking (User)
@@ -62,6 +63,15 @@ exports.createBooking = async (req, res) => {
       ],
     });
 
+    // Notify admin
+    notifyAdmins("admin:new_booking", {
+      bookingId: newBooking._id,
+      passengerName: passenger.name,
+      pickupLocation,
+      dropLocation,
+      message: `New booking from ${passenger.name}`
+    });
+
     res.status(201).json({
       message: "Booking created successfully (awaiting admin review)",
       booking: {
@@ -105,7 +115,6 @@ exports.getBookingById = async (req, res) => {
 
     if (!booking) return res.status(404).json({ message: "Booking not found" });
 
-    // Role-based access control
     if (req.user.role === "user" && booking.passengerId._id.toString() !== req.user.id) {
       return res.status(403).json({ message: "Forbidden" });
     }
@@ -114,7 +123,6 @@ exports.getBookingById = async (req, res) => {
       return res.status(403).json({ message: "Forbidden: Not assigned" });
     }
 
-    // Hide final price for users in review status
     if (req.user.role === "user" && booking.status === "in-review") {
       booking.finalPrice = undefined;
     }
@@ -134,19 +142,13 @@ exports.getCandidateRiders = async (req, res) => {
     const booking = await Booking.findById(req.params.id).populate("selectedCar");
     if (!booking) return res.status(404).json({ message: "Booking not found" });
 
-    // ONLY basic filter - get ALL approved riders with vehicles
-    // NO pre-filtering by date, vehicle type, etc.
-    const filter = {
+    const candidateRiders = await Rider.find({
       isApproved: true,
       vehicleCount: { $gt: 0 },
-    };
-
-    // Get ALL available riders (admin will filter manually)
-    const candidateRiders = await Rider.find(filter)
+    })
       .select("name mobile email riderId registrationDate averageRating reviewCount vehicleCount selfie vehicle isAvailable")
       .sort({ averageRating: -1, reviewCount: -1 });
 
-    // Optional: Check which riders are currently busy (for UI indication only)
     const overlappingBookings = await Booking.find({
       riderId: { $ne: null },
       status: { $in: ["rider-assigned", "in-process"] },
@@ -160,7 +162,6 @@ exports.getCandidateRiders = async (req, res) => {
 
     const busyRiderIds = overlappingBookings.map(b => b.riderId.toString());
 
-    // Mark riders as busy in response (but still show them)
     const ridersWithStatus = candidateRiders.map(rider => ({
       ...rider.toObject(),
       currentlyBusy: busyRiderIds.includes(rider._id.toString())
@@ -178,8 +179,9 @@ exports.getCandidateRiders = async (req, res) => {
 // -------------------------------
 exports.assignRider = async (req, res) => {
   try {
-    const { riderIds = [], finalPrice } = req.body; // Multiple riders selection
-    const booking = await Booking.findById(req.params.id);
+    const { riderIds = [], finalPrice } = req.body;
+    const booking = await Booking.findById(req.params.id)
+      .populate("passengerId", "name mobile");
     
     if (!booking) return res.status(404).json({ message: "Booking not found" });
 
@@ -187,7 +189,6 @@ exports.assignRider = async (req, res) => {
       return res.status(403).json({ message: "Only admin/vendor can send offers to riders" });
     }
 
-    // Validation
     if (!riderIds || riderIds.length === 0) {
       return res.status(400).json({ message: "Please select at least one rider" });
     }
@@ -196,7 +197,6 @@ exports.assignRider = async (req, res) => {
       return res.status(400).json({ message: "Valid final price is required" });
     }
 
-    // Verify all riders exist and are approved
     const riders = await Rider.find({ 
       _id: { $in: riderIds },
       isApproved: true 
@@ -206,12 +206,10 @@ exports.assignRider = async (req, res) => {
       return res.status(400).json({ message: "Some riders are not available or not approved" });
     }
 
-    // Reassignment rules
     if (booking.status === "cancelled" && booking.cancelledBy === "user") {
       return res.status(400).json({ message: "Cannot reassign — cancelled by user" });
     }
 
-    // If booking was cancelled by rider/admin, reopen it
     if (["cancelled", "rider-cancelled"].includes(booking.status)) {
       booking.status = "rider-offer-sent";
       booking.history.push({
@@ -221,30 +219,39 @@ exports.assignRider = async (req, res) => {
       });
     }
 
-    // Save offered riders (all selected riders)
     booking.offeredRiders = riderIds;
     booking.finalPrice = finalPrice;
-    booking.status = "rider-offer-sent"; // New status for pending offers
-    booking.riderId = null; // Clear previous rider if any
+    booking.status = "rider-offer-sent";
+    booking.riderId = null;
 
     booking.history.push({
       event: "Offers sent to multiple riders",
       role: req.user.role,
-      details: `Offer sent to ${riderIds.length} rider(s) with final price: ₹${finalPrice}. First to accept gets the booking.`,
+      details: `Offer sent to ${riderIds.length} rider(s) with final price: ₹${finalPrice}`,
     });
 
     await booking.save();
 
-    // TODO: Send notifications to all selected riders
-    // notificationSystem.notifyMultiple(riderIds, {
-    //   type: "new_booking_offer",
-    //   bookingId: booking._id,
-    //   price: finalPrice,
-    //   message: "New booking offer available. Accept now!"
-    // });
+    // 📱 Notify riders
+    riderIds.forEach(riderId => {
+      sendNotification(riderId, "rider", "rider:new_booking_offer", {
+        bookingId: booking._id,
+        pickupLocation: booking.pickupLocation,
+        dropLocation: booking.dropLocation,
+        pickupDate: booking.pickupDate,
+        finalPrice: booking.finalPrice,
+        message: `New ride: ${booking.pickupLocation} to ${booking.dropLocation}`
+      });
+    });
+
+    // 📱 Notify user
+    sendNotification(booking.passengerId._id, "user", "user:offers_sent", {
+      bookingId: booking._id,
+      message: `Your booking sent to ${riderIds.length} riders`
+    });
 
     res.status(200).json({
-      message: `Offer sent to ${riderIds.length} rider(s). First to accept will get the booking.`,
+      message: `Offer sent to ${riderIds.length} rider(s)`,
       booking: {
         ...booking.toObject(),
         offeredRidersCount: riderIds.length
@@ -257,127 +264,7 @@ exports.assignRider = async (req, res) => {
 };
 
 // -------------------------------
-// 6️⃣ Update booking status (Rider / Admin / Vendor)
-// -------------------------------
-exports.updateBookingStatus = async (req, res) => {
-  try {
-    const { status } = req.body;
-    const booking = await Booking.findById(req.params.id);
-    
-    if (!booking) return res.status(404).json({ message: "Booking not found" });
-
-    // Validate status transitions
-    const validStatuses = ["in-review", "rider-assigned", "in-process", "completed", "cancelled"];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ message: "Invalid status" });
-    }
-
-    // Role-based status update restrictions
-    if (req.user.role === "rider") {
-      if (booking.riderId?.toString() !== req.user.id) {
-        return res.status(403).json({ message: "Not authorized to update this booking" });
-      }
-      // Riders can only update to in-process or completed
-      if (!["in-process", "completed"].includes(status)) {
-        return res.status(400).json({ message: "Invalid status for rider" });
-      }
-    }
-
-    const oldStatus = booking.status;
-    booking.status = status;
-    
-    booking.history.push({ 
-      event: "Status updated", 
-      role: req.user.role, 
-      details: `Status changed from ${oldStatus} to ${status}` 
-    });
-
-    await booking.save();
-    
-    res.status(200).json({ message: "Booking status updated", booking });
-  } catch (error) {
-    console.error("Update booking status error:", error);
-    res.status(500).json({ message: "Failed to update booking status" });
-  }
-};
-
-// -------------------------------
-// 7️⃣ Cancel booking (Role-based)
-// -------------------------------
-exports.cancelBooking = async (req, res) => {
-  try {
-    const { reason = "No reason provided" } = req.body;
-    const booking = await Booking.findById(req.params.id);
-    
-    if (!booking) return res.status(404).json({ message: "Booking not found" });
-
-    if (["cancelled", "completed"].includes(booking.status)) {
-      return res.status(400).json({ message: `Booking already ${booking.status}` });
-    }
-
-    const role = req.user.role;
-
-    // User cancellation rules
-    if (role === "user") {
-      if (booking.passengerId.toString() !== req.user.id) {
-        return res.status(403).json({ message: "Not authorized" });
-      }
-      if (["rider-assigned", "in-process", "completed"].includes(booking.status)) {
-        return res.status(403).json({ 
-          message: "Cannot cancel after rider assignment or ride start. Please contact support." 
-        });
-      }
-    }
-
-    // Rider cancellation rules
-    if (role === "rider") {
-      if (booking.riderId?.toString() !== req.user.id) {
-        return res.status(403).json({ message: "Rider can only cancel their own assigned booking" });
-      }
-      if (booking.status === "completed") {
-        return res.status(400).json({ message: "Cannot cancel completed ride" });
-      }
-    }
-
-    // Update booking
-    booking.status = "cancelled";
-    booking.cancelledBy = role;
-    booking.cancelReason = reason;
-    booking.cancelledAt = new Date();
-
-    // If rider cancelled, make it available for reassignment
-    if (role === "rider") {
-      booking.riderId = null;
-      booking.finalPrice = null;
-      booking.status = "in-review"; // Back to review for admin to reassign
-      
-      booking.history.push({ 
-        event: "Booking reopened for reassignment", 
-        role: "system", 
-        details: `Previous rider cancelled: ${reason}` 
-      });
-    }
-
-    booking.history.push({ 
-      event: "Booking cancelled", 
-      role, 
-      details: reason 
-    });
-
-    await booking.save();
-
-    res.status(200).json({ 
-      message: `Booking ${role === "rider" ? "cancelled and reopened for reassignment" : "cancelled"}`, 
-      booking 
-    });
-  } catch (error) {
-    console.error("Cancel booking error:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-// -------------------------------
-// 9️⃣ Rider accepts booking offer (First come, first served)
+// 6️⃣ Rider accepts booking offer
 // -------------------------------
 exports.acceptBookingOffer = async (req, res) => {
   try {
@@ -389,25 +276,18 @@ exports.acceptBookingOffer = async (req, res) => {
 
     const riderId = req.user.id;
 
-    // Check if this rider was offered the booking
     const wasOffered = booking.offeredRiders.some(
       rider => rider._id.toString() === riderId
     );
 
     if (!wasOffered) {
-      return res.status(403).json({ 
-        message: "You were not offered this booking" 
-      });
+      return res.status(403).json({ message: "You were not offered this booking" });
     }
 
-    // Check if booking is still available
     if (booking.status !== "rider-offer-sent") {
-      return res.status(400).json({ 
-        message: "This booking is no longer available. Another rider may have already accepted it." 
-      });
+      return res.status(400).json({ message: "Booking no longer available" });
     }
 
-    // Check if rider is already busy during this time
     const overlappingBooking = await Booking.findOne({
       riderId: riderId,
       status: { $in: ["rider-assigned", "in-process"] },
@@ -420,18 +300,14 @@ exports.acceptBookingOffer = async (req, res) => {
     });
 
     if (overlappingBooking) {
-      return res.status(400).json({ 
-        message: "You are already assigned to another booking during this time" 
-      });
+      return res.status(400).json({ message: "You are already assigned to another booking" });
     }
 
-    // Get rider info
     const rider = await Rider.findById(riderId);
     if (!rider || !rider.isApproved) {
-      return res.status(400).json({ message: "Rider account is not active" });
+      return res.status(400).json({ message: "Rider account not active" });
     }
 
-    // ASSIGN BOOKING TO THIS RIDER (First come, first served!)
     booking.riderId = riderId;
     booking.status = "rider-assigned";
     booking.acceptedAt = new Date();
@@ -439,45 +315,58 @@ exports.acceptBookingOffer = async (req, res) => {
     booking.history.push({
       event: "Booking accepted by rider",
       role: "rider",
-      details: `${rider.name} accepted the booking offer. Price: ₹${booking.finalPrice}`,
+      details: `${rider.name} accepted - Price: ₹${booking.finalPrice}`,
     });
 
     await booking.save();
 
-    // TODO: Notify other riders that booking is taken
-    // TODO: Notify user that rider is assigned
-    // TODO: Notify admin about successful assignment
+    // 📱 Notify other riders
+    booking.offeredRiders
+      .filter(r => r._id.toString() !== riderId)
+      .forEach(otherRider => {
+        sendNotification(otherRider._id, "rider", "rider:booking_taken", {
+          bookingId: booking._id,
+          message: "Booking already accepted by another rider"
+        });
+      });
+
+    // 📱 Notify user
+    sendNotification(booking.passengerId._id, "user", "user:rider_assigned", {
+      bookingId: booking._id,
+      riderName: rider.name,
+      riderMobile: rider.mobile,
+      message: `${rider.name} has been assigned to your booking`
+    });
 
     res.status(200).json({
-      message: "Booking accepted successfully! You have been assigned this ride.",
+      message: "Booking accepted successfully!",
       booking: {
         _id: booking._id,
         pickupLocation: booking.pickupLocation,
         dropLocation: booking.dropLocation,
         pickupDate: booking.pickupDate,
-        rideEndDate: booking.rideEndDate,
         finalPrice: booking.finalPrice,
         passenger: booking.passengerId,
         status: booking.status
       },
     });
   } catch (error) {
-    console.error("Accept booking offer error:", error);
+    console.error("Accept booking error:", error);
     res.status(500).json({ message: "Failed to accept booking" });
   }
 };
 
 // -------------------------------
-// 🔟 Rider rejects booking offer
+// 7️⃣ Rider rejects booking offer
 // -------------------------------
 exports.rejectBookingOffer = async (req, res) => {
   try {
-    const booking = await Booking.findById(req.params.id);
+    const booking = await Booking.findById(req.params.id)
+      .populate("passengerId", "name mobile");
     if (!booking) return res.status(404).json({ message: "Booking not found" });
 
     const riderId = req.user.id;
 
-    // Remove rider from offered list
     booking.offeredRiders = booking.offeredRiders.filter(
       id => id.toString() !== riderId
     );
@@ -485,32 +374,186 @@ exports.rejectBookingOffer = async (req, res) => {
     booking.history.push({
       event: "Rider rejected offer",
       role: "rider",
-      details: `Rider ${riderId} rejected the booking offer`,
+      details: `Rider ${riderId} rejected`,
     });
 
     await booking.save();
 
-    // If no riders left, notify admin
+    // If no riders left
     if (booking.offeredRiders.length === 0 && booking.status === "rider-offer-sent") {
       booking.status = "in-review";
       booking.history.push({
         event: "All riders rejected",
         role: "system",
-        details: "All offered riders rejected. Booking back to review.",
+        details: "Back to review",
       });
       await booking.save();
+
+      // 📱 Notify user
+      sendNotification(booking.passengerId._id, "user", "user:no_riders_available", {
+        bookingId: booking._id,
+        message: "All riders declined. We're finding new drivers."
+      });
     }
 
-    res.status(200).json({
-      message: "Booking offer rejected",
-    });
+    res.status(200).json({ message: "Booking offer rejected" });
   } catch (error) {
-    console.error("Reject booking offer error:", error);
+    console.error("Reject booking error:", error);
     res.status(500).json({ message: "Failed to reject booking" });
   }
 };
 
-// ✅ Passenger: Get Completed Booking History
+// -------------------------------
+// 8️⃣ Update booking status
+// -------------------------------
+exports.updateBookingStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const booking = await Booking.findById(req.params.id)
+      .populate("passengerId", "name mobile")
+      .populate("riderId", "name mobile");
+    
+    if (!booking) return res.status(404).json({ message: "Booking not found" });
+
+    const validStatuses = ["in-review", "rider-assigned", "in-process", "completed", "cancelled"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    if (req.user.role === "rider") {
+      if (booking.riderId?._id.toString() !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      if (!["in-process", "completed"].includes(status)) {
+        return res.status(400).json({ message: "Invalid status for rider" });
+      }
+    }
+
+    const oldStatus = booking.status;
+    booking.status = status;
+    
+    booking.history.push({ 
+      event: "Status updated", 
+      role: req.user.role, 
+      details: `${oldStatus} → ${status}` 
+    });
+
+    await booking.save();
+
+    // 📱 Notifications
+    if (status === "in-process") {
+      sendNotification(booking.passengerId._id, "user", "user:ride_started", {
+        bookingId: booking._id,
+        riderName: booking.riderId.name,
+        riderMobile: booking.riderId.mobile,
+        message: "Your ride has started"
+      });
+    }
+
+    if (status === "completed") {
+      sendNotification(booking.passengerId._id, "user", "user:ride_completed", {
+        bookingId: booking._id,
+        message: "Ride completed. Thank you!"
+      });
+
+      sendNotification(booking.riderId._id, "rider", "rider:ride_completed", {
+        bookingId: booking._id,
+        finalPrice: booking.finalPrice,
+        message: `Ride completed - You earned ₹${booking.finalPrice}`
+      });
+    }
+    
+    res.status(200).json({ message: "Status updated", booking });
+  } catch (error) {
+    console.error("Update status error:", error);
+    res.status(500).json({ message: "Failed to update status" });
+  }
+};
+
+// -------------------------------
+// 9️⃣ Cancel booking
+// -------------------------------
+exports.cancelBooking = async (req, res) => {
+  try {
+    const { reason = "No reason provided" } = req.body;
+    const booking = await Booking.findById(req.params.id)
+      .populate("passengerId", "_id name mobile")
+      .populate("riderId", "_id name mobile");
+
+    if (!booking) return res.status(404).json({ message: "Booking not found" });
+
+    if (["cancelled", "completed"].includes(booking.status)) {
+      return res.status(400).json({ message: `Already ${booking.status}` });
+    }
+
+    const role = req.user.role;
+
+    if (role === "user") {
+      if (booking.passengerId._id.toString() !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      if (["rider-assigned", "in-process"].includes(booking.status)) {
+        return res.status(403).json({ message: "Cannot cancel after assignment" });
+      }
+    }
+
+    if (role === "rider") {
+      if (booking.riderId?._id.toString() !== req.user.id) {
+        return res.status(403).json({ message: "Not your booking" });
+      }
+      if (booking.status === "completed") {
+        return res.status(400).json({ message: "Cannot cancel completed ride" });
+      }
+    }
+
+    booking.status = "cancelled";
+    booking.cancelledBy = role;
+    booking.cancelReason = reason;
+    booking.cancelledAt = new Date();
+
+    if (role === "rider") {
+      booking.riderId = null;
+      booking.finalPrice = null;
+      booking.status = "in-review";
+      
+      booking.history.push({ 
+        event: "Reopened for reassignment", 
+        role: "system", 
+        details: `Rider cancelled: ${reason}` 
+      });
+    }
+
+    booking.history.push({ event: "Cancelled", role, details: reason });
+    await booking.save();
+
+    // 📱 Notifications
+    if (role === "user" && booking.riderId) {
+      sendNotification(booking.riderId._id, "rider", "rider:booking_cancelled", {
+        bookingId: booking._id,
+        message: "Passenger cancelled the booking"
+      });
+    }
+
+    if (role === "rider" && booking.passengerId) {
+      sendNotification(booking.passengerId._id, "user", "user:booking_cancelled", {
+        bookingId: booking._id,
+        message: "Rider cancelled. Finding another driver for you."
+      });
+    }
+
+    res.status(200).json({ 
+      message: role === "rider" ? "Cancelled and reopened" : "Cancelled", 
+      booking 
+    });
+  } catch (error) {
+    console.error("Cancel booking error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// -------------------------------
+// 🔟 Get booking history
+// -------------------------------
 exports.getUserBookingHistory = async (req, res) => {
   try {
     const passengerId = req.user?.id;
@@ -531,12 +574,11 @@ exports.getUserBookingHistory = async (req, res) => {
       bookings,
     });
   } catch (error) {
-    console.error("Error fetching user history:", error);
+    console.error("Get user history error:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
-// ✅ Rider: Get Completed Booking History
 exports.getRiderBookingHistory = async (req, res) => {
   try {
     const riderId = req.user?.id;
@@ -557,7 +599,7 @@ exports.getRiderBookingHistory = async (req, res) => {
       bookings,
     });
   } catch (error) {
-    console.error("Error fetching rider history:", error);
+    console.error("Get rider history error:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };

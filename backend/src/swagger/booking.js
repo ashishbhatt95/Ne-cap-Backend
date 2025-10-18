@@ -1,21 +1,104 @@
 /**
  * @swagger
  * tags:
- *   - name: Booking
- *     description: Booking management APIs (User, Admin, Rider)
+ *   name: 📦 Bookings
+ *   description: Booking management APIs for Users, Riders, and Admins
  */
 
 /**
- * -------------------------------
- * 1️⃣ Create a new booking (User)
- * -------------------------------
+ * @swagger
+ * components:
+ *   schemas:
+ *     Booking:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *           example: "507f1f77bcf86cd799439011"
+ *         passengerId:
+ *           type: string
+ *           example: "507f1f77bcf86cd799439012"
+ *         riderId:
+ *           type: string
+ *           example: "507f1f77bcf86cd799439013"
+ *         pickupLocation:
+ *           type: string
+ *           example: "Connaught Place, New Delhi"
+ *         dropLocation:
+ *           type: string
+ *           example: "IGI Airport, New Delhi"
+ *         distance:
+ *           type: number
+ *           example: 15.5
+ *         pickupDate:
+ *           type: string
+ *           format: date-time
+ *           example: "2025-10-20T10:00:00Z"
+ *         rideEndDate:
+ *           type: string
+ *           format: date-time
+ *           example: "2025-10-20T18:00:00Z"
+ *         maleCount:
+ *           type: number
+ *           example: 2
+ *         femaleCount:
+ *           type: number
+ *           example: 1
+ *         kidsCount:
+ *           type: number
+ *           example: 0
+ *         totalPassengers:
+ *           type: number
+ *           example: 3
+ *         selectedCar:
+ *           type: string
+ *           example: "507f1f77bcf86cd799439014"
+ *         acType:
+ *           type: string
+ *           enum: [AC, Non-AC]
+ *           example: "AC"
+ *         additionalDetails:
+ *           type: string
+ *           example: "Please call before arriving"
+ *         journeyDays:
+ *           type: number
+ *           example: 1
+ *         initialPrice:
+ *           type: number
+ *           example: 1500
+ *         finalPrice:
+ *           type: number
+ *           example: 1800
+ *         status:
+ *           type: string
+ *           enum: [in-review, rider-offer-sent, rider-assigned, in-process, completed, cancelled]
+ *           example: "rider-assigned"
+ *         offeredRiders:
+ *           type: array
+ *           items:
+ *             type: string
+ *           example: ["507f1f77bcf86cd799439015", "507f1f77bcf86cd799439016"]
+ *         cancelledBy:
+ *           type: string
+ *           enum: [user, rider, admin]
+ *           example: "user"
+ *         cancelReason:
+ *           type: string
+ *           example: "Change of plans"
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
  */
+
 /**
  * @swagger
- * /api/booking/create:
+ * /api/bookings/create:
  *   post:
- *     summary: Create a new booking (User only)
- *     tags: [Booking]
+ *     summary: 🆕 Create a new booking (User only)
+ *     tags: [📦 Bookings]
  *     security:
  *       - BearerAuth: []
  *     requestBody:
@@ -34,33 +117,40 @@
  *             properties:
  *               pickupLocation:
  *                 type: string
+ *                 example: "Connaught Place, New Delhi"
  *               dropLocation:
  *                 type: string
+ *                 example: "IGI Airport, New Delhi"
  *               distance:
  *                 type: number
+ *                 example: 15.5
  *               pickupDate:
  *                 type: string
  *                 format: date-time
+ *                 example: "2025-10-20T10:00:00Z"
  *               rideEndDate:
  *                 type: string
  *                 format: date-time
+ *                 example: "2025-10-20T18:00:00Z"
  *               maleCount:
- *                 type: integer
- *                 default: 0
+ *                 type: number
+ *                 example: 2
  *               femaleCount:
- *                 type: integer
- *                 default: 0
+ *                 type: number
+ *                 example: 1
  *               kidsCount:
- *                 type: integer
- *                 default: 0
+ *                 type: number
+ *                 example: 0
  *               selectedCar:
  *                 type: string
- *                 description: VehicleCategory ID
+ *                 example: "507f1f77bcf86cd799439014"
  *               acType:
  *                 type: string
- *                 description: "AC / Non-AC"
+ *                 enum: [AC, Non-AC]
+ *                 example: "AC"
  *               additionalDetails:
  *                 type: string
+ *                 example: "Please call before arriving"
  *     responses:
  *       201:
  *         description: Booking created successfully
@@ -68,43 +158,37 @@
  *         description: Missing required fields
  *       401:
  *         description: Unauthorized
- *       500:
- *         description: Internal server error
  */
 
 /**
- * -------------------------------
- * 2️⃣ Get all bookings (Admin)
- * -------------------------------
- */
-/**
  * @swagger
- * /api/booking/:
+ * /api/bookings:
  *   get:
- *     summary: Get all bookings (Admin only)
- *     tags: [Booking]
+ *     summary: 📋 Get all bookings (Admin only)
+ *     tags: [📦 Bookings]
  *     security:
  *       - BearerAuth: []
  *     responses:
  *       200:
- *         description: List of bookings
+ *         description: List of all bookings
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Booking'
+ *       401:
+ *         description: Unauthorized
  *       403:
- *         description: Forbidden
- *       500:
- *         description: Internal server error
+ *         description: Admin access required
  */
 
 /**
- * -------------------------------
- * 3️⃣ Get booking by ID (Role-based)
- * -------------------------------
- */
-/**
  * @swagger
- * /api/booking/{id}:
+ * /api/bookings/{id}:
  *   get:
- *     summary: Get booking details by ID (User, Rider, Admin)
- *     tags: [Booking]
+ *     summary: 🔍 Get booking by ID
+ *     tags: [📦 Bookings]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -114,26 +198,26 @@
  *         schema:
  *           type: string
  *         description: Booking ID
+ *         example: "507f1f77bcf86cd799439011"
  *     responses:
  *       200:
  *         description: Booking details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Booking'
  *       403:
- *         description: Forbidden
+ *         description: Forbidden - Not your booking
  *       404:
  *         description: Booking not found
  */
 
 /**
- * -------------------------------
- * 4️⃣ Get candidate riders for booking (Admin)
- * -------------------------------
- */
-/**
  * @swagger
- * /api/booking/candidate-riders/{id}:
+ * /api/bookings/candidate-riders/{id}:
  *   get:
- *     summary: Get candidate riders for a booking (Admin only)
- *     tags: [Booking]
+ *     summary: 👥 Get candidate riders for booking (Admin only)
+ *     tags: [📦 Bookings]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -143,26 +227,39 @@
  *         schema:
  *           type: string
  *         description: Booking ID
+ *         example: "507f1f77bcf86cd799439011"
  *     responses:
  *       200:
- *         description: List of candidate riders
+ *         description: List of available riders
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                   name:
+ *                     type: string
+ *                   mobile:
+ *                     type: string
+ *                   averageRating:
+ *                     type: number
+ *                   currentlyBusy:
+ *                     type: boolean
+ *       403:
+ *         description: Admin access required
  *       404:
  *         description: Booking not found
- *       500:
- *         description: Internal server error
  */
 
 /**
- * -------------------------------
- * 5️⃣ Assign booking to riders (Admin)
- * -------------------------------
- */
-/**
  * @swagger
- * /api/booking/assign/{id}:
+ * /api/bookings/assign/{id}:
  *   put:
- *     summary: Send booking offer to multiple riders (Admin only)
- *     tags: [Booking]
+ *     summary: 📤 Send offer to multiple riders (Admin only)
+ *     tags: [📦 Bookings]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -172,6 +269,7 @@
  *         schema:
  *           type: string
  *         description: Booking ID
+ *         example: "507f1f77bcf86cd799439011"
  *     requestBody:
  *       required: true
  *       content:
@@ -186,61 +284,27 @@
  *                 type: array
  *                 items:
  *                   type: string
+ *                 example: ["507f1f77bcf86cd799439015", "507f1f77bcf86cd799439016"]
  *               finalPrice:
  *                 type: number
+ *                 example: 1800
  *     responses:
  *       200:
- *         description: Offers sent successfully
+ *         description: Offers sent to riders
  *       400:
- *         description: Validation error
+ *         description: Invalid input
  *       403:
- *         description: Forbidden
- *       500:
- *         description: Internal server error
- */
-
-/**
- * -------------------------------
- * 6️⃣ Accept booking offer (Rider)
- * -------------------------------
- */
-/**
- * @swagger
- * /api/booking/accept/{id}:
- *   put:
- *     summary: Rider accepts booking offer (first come, first served)
- *     tags: [Booking]
- *     security:
- *       - BearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Booking ID
- *     responses:
- *       200:
- *         description: Booking accepted successfully
- *       400:
- *         description: Booking no longer available / overlapping
- *       403:
- *         description: Forbidden
+ *         description: Admin access required
  *       404:
  *         description: Booking not found
  */
 
 /**
- * -------------------------------
- * 7️⃣ Reject booking offer (Rider)
- * -------------------------------
- */
-/**
  * @swagger
- * /api/booking/reject/{id}:
+ * /api/bookings/accept/{id}:
  *   put:
- *     summary: Rider rejects booking offer
- *     tags: [Booking]
+ *     summary: ✅ Accept booking offer (Rider only)
+ *     tags: [📦 Bookings]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -250,26 +314,47 @@
  *         schema:
  *           type: string
  *         description: Booking ID
+ *         example: "507f1f77bcf86cd799439011"
+ *     responses:
+ *       200:
+ *         description: Booking accepted successfully
+ *       400:
+ *         description: Booking no longer available or already assigned
+ *       403:
+ *         description: Not offered this booking
+ *       404:
+ *         description: Booking not found
+ */
+
+/**
+ * @swagger
+ * /api/bookings/reject/{id}:
+ *   put:
+ *     summary: ❌ Reject booking offer (Rider only)
+ *     tags: [📦 Bookings]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Booking ID
+ *         example: "507f1f77bcf86cd799439011"
  *     responses:
  *       200:
  *         description: Booking offer rejected
  *       404:
  *         description: Booking not found
- *       500:
- *         description: Internal server error
  */
 
 /**
- * -------------------------------
- * 8️⃣ Update booking status (Rider / Admin)
- * -------------------------------
- */
-/**
  * @swagger
- * /api/booking/status/{id}:
+ * /api/bookings/status/{id}:
  *   put:
- *     summary: Update booking status (Rider / Admin)
- *     tags: [Booking]
+ *     summary: 🔄 Update booking status (Rider/Admin)
+ *     tags: [📦 Bookings]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -279,38 +364,37 @@
  *         schema:
  *           type: string
  *         description: Booking ID
+ *         example: "507f1f77bcf86cd799439011"
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - status
  *             properties:
  *               status:
  *                 type: string
  *                 enum: [in-review, rider-assigned, in-process, completed, cancelled]
+ *                 example: "in-process"
  *     responses:
  *       200:
- *         description: Booking status updated
+ *         description: Status updated successfully
  *       400:
  *         description: Invalid status
  *       403:
- *         description: Forbidden
+ *         description: Not authorized
  *       404:
  *         description: Booking not found
  */
 
 /**
- * -------------------------------
- * 9️⃣ Cancel booking (User / Rider / Admin)
- * -------------------------------
- */
-/**
  * @swagger
- * /api/booking/cancel/{id}:
+ * /api/bookings/cancel/{id}:
  *   put:
- *     summary: Cancel booking
- *     tags: [Booking]
+ *     summary: 🚫 Cancel booking (User/Rider/Admin)
+ *     tags: [📦 Bookings]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -320,6 +404,7 @@
  *         schema:
  *           type: string
  *         description: Booking ID
+ *         example: "507f1f77bcf86cd799439011"
  *     requestBody:
  *       required: false
  *       content:
@@ -329,74 +414,29 @@
  *             properties:
  *               reason:
  *                 type: string
- *                 description: Reason for cancellation
+ *                 example: "Change of plans"
  *     responses:
  *       200:
  *         description: Booking cancelled successfully
  *       400:
- *         description: Booking cannot be cancelled
+ *         description: Already cancelled or completed
  *       403:
- *         description: Forbidden
+ *         description: Cannot cancel after rider assignment
  *       404:
  *         description: Booking not found
  */
 
 /**
- * 🔟 Submit review (User)
- */
-/**
  * @swagger
- * /api/booking/review/{id}:
- *   post:
- *     summary: Submit review after ride completion (User)
- *     tags: [Booking]
+ * /api/bookings/history/user:
+ *   get:
+ *     summary: 📜 Get user booking history (User only)
+ *     tags: [📦 Bookings]
  *     security:
  *       - BearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Booking ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - rating
- *             properties:
- *               rating:
- *                 type: integer
- *                 minimum: 1
- *                 maximum: 5
- *               comment:
- *                 type: string
  *     responses:
  *       200:
- *         description: Review submitted successfully
- *       400:
- *         description: Invalid rating / booking not completed
- *       403:
- *         description: Forbidden
- *       404:
- *         description: Booking not found
- */
-
-/**
- * @swagger
- * /api/booking/history/user:
- *   get:
- *     summary: Get completed ride history for a passenger
- *     description: Returns all rides that the logged-in passenger has completed.
- *     tags: [Booking]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Successfully retrieved passenger's completed ride history
+ *         description: List of completed bookings
  *         content:
  *           application/json:
  *             schema:
@@ -406,238 +446,42 @@
  *                   type: boolean
  *                   example: true
  *                 count:
- *                   type: integer
- *                   example: 3
- *                 bookings:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       _id:
- *                         type: string
- *                         example: 6710a5bf3f6c8d001234abcd
- *                       pickupLocation:
- *                         type: string
- *                         example: "Connaught Place"
- *                       dropLocation:
- *                         type: string
- *                         example: "Indira Gandhi International Airport"
- *                       finalPrice:
- *                         type: number
- *                         example: 850
- *                       createdAt:
- *                         type: string
- *                         format: date-time
- *                         example: "2025-10-18T10:23:54.000Z"
- *                       status:
- *                         type: string
- *                         example: "completed"
- *                       riderId:
- *                         type: object
- *                         properties:
- *                           name:
- *                             type: string
- *                             example: "Ravi Kumar"
- *                           mobile:
- *                             type: string
- *                             example: "9990011223"
- *                           averageRating:
- *                             type: number
- *                             example: 4.7
- *       401:
- *         description: Unauthorized — JWT token missing or invalid
- *       500:
- *         description: Server error
- */
- 
-/**
- * @swagger
- * /api/booking/history/rider:
- *   get:
- *     summary: Get completed ride history for a rider
- *     description: Returns all rides that the logged-in rider has completed.
- *     tags: [Booking]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Successfully retrieved rider's completed ride history
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 count:
- *                   type: integer
+ *                   type: number
  *                   example: 5
  *                 bookings:
  *                   type: array
  *                   items:
- *                     type: object
- *                     properties:
- *                       _id:
- *                         type: string
- *                         example: 6710a6ef3f6c8d002233bcde
- *                       pickupLocation:
- *                         type: string
- *                         example: "Cyber City"
- *                       dropLocation:
- *                         type: string
- *                         example: "Delhi Airport"
- *                       finalPrice:
- *                         type: number
- *                         example: 900
- *                       createdAt:
- *                         type: string
- *                         format: date-time
- *                         example: "2025-10-17T18:32:15.000Z"
- *                       status:
- *                         type: string
- *                         example: "completed"
- *                       passengerId:
- *                         type: object
- *                         properties:
- *                           name:
- *                             type: string
- *                             example: "Amit Verma"
- *                           mobile:
- *                             type: string
- *                             example: "9876543210"
+ *                     $ref: '#/components/schemas/Booking'
  *       401:
- *         description: Unauthorized — JWT token missing or invalid
- *       500:
- *         description: Server error
+ *         description: Unauthorized
  */
 
 /**
  * @swagger
- * components:
- *   schemas:
- *     Booking:
- *       type: object
- *       required:
- *         - passengerId
- *         - pickupLocation
- *         - dropLocation
- *         - pickupDate
- *         - rideEndDate
- *         - selectedCar
- *         - acType
- *         - initialPrice
- *         - status
- *       properties:
- *         _id:
- *           type: string
- *           description: Booking ID
- *         passengerId:
- *           type: string
- *           description: Reference to Passenger
- *         pickupLocation:
- *           type: string
- *         dropLocation:
- *           type: string
- *         distance:
- *           type: number
- *         pickupDate:
- *           type: string
- *           format: date-time
- *         rideEndDate:
- *           type: string
- *           format: date-time
- *         journeyDays:
- *           type: number
- *         maleCount:
- *           type: number
- *         femaleCount:
- *           type: number
- *         kidsCount:
- *           type: number
- *         totalPassengers:
- *           type: number
- *         selectedCar:
- *           type: string
- *           description: Reference to VehicleCategory
- *         acType:
- *           type: string
- *           enum: [AC, Non-AC, Both]
- *         riderId:
- *           type: string
- *           description: Reference to Rider
- *         initialPrice:
- *           type: number
- *         finalPrice:
- *           type: number
- *         status:
- *           type: string
- *           enum: [in-review, rider-offer-sent, rider-assigned, in-process, completed, cancelled]
- *         cancelledBy:
- *           type: string
- *           enum: [user, rider, admin]
- *         cancelReason:
- *           type: string
- *         cancelledAt:
- *           type: string
- *           format: date-time
- *         additionalDetails:
- *           type: string
- *         acceptedAt:
- *           type: string
- *           format: date-time
- *         offeredRiders:
- *           type: array
- *           items:
- *             type: string
- *             description: Rider IDs who were offered this booking
- *         history:
- *           type: array
- *           items:
- *             type: object
- *             properties:
- *               event:
- *                 type: string
- *               role:
- *                 type: string
- *                 enum: [user, rider, admin, system]
- *               details:
- *                 type: string
- *               timestamp:
- *                 type: string
- *                 format: date-time
- *         createdAt:
- *           type: string
- *           format: date-time
- *         updatedAt:
- *           type: string
- *           format: date-time
- *       example:
- *         _id: "64f2d1a1c2a4e5b3f1234567"
- *         passengerId: "64f2d0f1b1b3e5a2c1234567"
- *         pickupLocation: "New Delhi"
- *         dropLocation: "Gurugram"
- *         distance: 30
- *         pickupDate: "2025-10-20T10:00:00Z"
- *         rideEndDate: "2025-10-20T12:00:00Z"
- *         journeyDays: 1
- *         maleCount: 1
- *         femaleCount: 2
- *         kidsCount: 1
- *         totalPassengers: 4
- *         selectedCar: "64f2d0a1b1b3e5a2c1234567"
- *         acType: "AC"
- *         riderId: null
- *         initialPrice: 900
- *         finalPrice: null
- *         status: "in-review"
- *         cancelledBy: null
- *         cancelReason: null
- *         cancelledAt: null
- *         additionalDetails: "Need baby seat"
- *         acceptedAt: null
- *         offeredRiders: []
- *         history: []
- *         createdAt: "2025-10-18T12:00:00Z"
- *         updatedAt: "2025-10-18T12:00:00Z"
+ * /api/bookings/history/rider:
+ *   get:
+ *     summary: 📜 Get rider booking history (Rider only)
+ *     tags: [📦 Bookings]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of completed bookings
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 count:
+ *                   type: number
+ *                   example: 12
+ *                 bookings:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Booking'
+ *       401:
+ *         description: Unauthorized
  */
