@@ -1,7 +1,7 @@
 /**
  * @swagger
  * tags:
- *   name: 📦 Bookings
+ *   name:  Bookings
  *   description: Booking management APIs for Users, Riders, and Admins
  */
 
@@ -97,8 +97,8 @@
  * @swagger
  * /api/bookings/create:
  *   post:
- *     summary: 🆕 Create a new booking (User only)
- *     tags: [📦 Bookings]
+ *     summary:  Create a new booking (User only)
+ *     tags: [ Bookings]
  *     security:
  *       - BearerAuth: []
  *     requestBody:
@@ -164,8 +164,8 @@
  * @swagger
  * /api/bookings:
  *   get:
- *     summary: 📋 Get all bookings (Admin only)
- *     tags: [📦 Bookings]
+ *     summary:  Get all bookings (Admin only)
+ *     tags: [ Bookings]
  *     security:
  *       - BearerAuth: []
  *     responses:
@@ -187,8 +187,8 @@
  * @swagger
  * /api/bookings/{id}:
  *   get:
- *     summary: 🔍 Get booking by ID
- *     tags: [📦 Bookings]
+ *     summary:  Get booking by ID
+ *     tags: [ Bookings]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -216,8 +216,8 @@
  * @swagger
  * /api/bookings/candidate-riders/{id}:
  *   get:
- *     summary: 👥 Get candidate riders for booking (Admin only)
- *     tags: [📦 Bookings]
+ *     summary:  Get candidate riders for booking (Admin only)
+ *     tags: [ Bookings]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -258,8 +258,8 @@
  * @swagger
  * /api/bookings/assign/{id}:
  *   put:
- *     summary: 📤 Send offer to multiple riders (Admin only)
- *     tags: [📦 Bookings]
+ *     summary:  Send offer to multiple riders (Admin only)
+ *     tags: [ Bookings]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -303,8 +303,8 @@
  * @swagger
  * /api/bookings/accept/{id}:
  *   put:
- *     summary: ✅ Accept booking offer (Rider only)
- *     tags: [📦 Bookings]
+ *     summary:  Accept booking offer (Rider only)
+ *     tags: [ Bookings]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -330,8 +330,8 @@
  * @swagger
  * /api/bookings/reject/{id}:
  *   put:
- *     summary: ❌ Reject booking offer (Rider only)
- *     tags: [📦 Bookings]
+ *     summary:  Reject booking offer (Rider only)
+ *     tags: [ Bookings]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -353,8 +353,8 @@
  * @swagger
  * /api/bookings/status/{id}:
  *   put:
- *     summary: 🔄 Update booking status (Rider/Admin)
- *     tags: [📦 Bookings]
+ *     summary:  Update booking status (Rider/Admin)
+ *     tags: [ Bookings]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -393,8 +393,8 @@
  * @swagger
  * /api/bookings/cancel/{id}:
  *   put:
- *     summary: 🚫 Cancel booking (User/Rider/Admin)
- *     tags: [📦 Bookings]
+ *     summary:  Cancel booking (User/Rider/Admin)
+ *     tags: [ Bookings]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -430,8 +430,8 @@
  * @swagger
  * /api/bookings/history/user:
  *   get:
- *     summary: 📜 Get user booking history (User only)
- *     tags: [📦 Bookings]
+ *     summary:  Get user booking history (User only)
+ *     tags: [ Bookings]
  *     security:
  *       - BearerAuth: []
  *     responses:
@@ -460,8 +460,8 @@
  * @swagger
  * /api/bookings/history/rider:
  *   get:
- *     summary: 📜 Get rider booking history (Rider only)
- *     tags: [📦 Bookings]
+ *     summary:  Get rider booking history (Rider only)
+ *     tags: [ Bookings]
  *     security:
  *       - BearerAuth: []
  *     responses:
