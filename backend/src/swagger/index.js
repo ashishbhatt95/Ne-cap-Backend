@@ -17,7 +17,6 @@ Passenger & Rider APIs with OTP, Cloudinary uploads, and MongoDB integration.
     servers: [
       { url: "http://localhost:5000", description: "Local Development" },
       { url: "https://ne-cap-backend.onrender.com", description: "Production Server" },
-      { url: "https://api.ourmicr.com", description: "Production Server" },
     ],
     components: {
       securitySchemes: {
