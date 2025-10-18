@@ -23,8 +23,8 @@ router.post("/register", registerPassenger);
 router.get("/leaderboard", roleAuthorization(["admin"]), getLeaderboard);
 router.get("/buyers", roleAuthorization(["admin"]), getAllBuyers);
 router.get("/", roleAuthorization(["admin"]), getAllPassengers);
-router.get("/:id", roleAuthorization(["admin"]), getPassengerById);
-router.put("/:id", roleAuthorization(["admin"]), updatePassenger);
+router.get("/:id", roleAuthorization(["user"]), getPassengerById);
+router.put("/:id", roleAuthorization(["user"]), updatePassenger);
 router.delete("/:id", roleAuthorization(["admin"]), deletePassenger);
 
 module.exports = router;

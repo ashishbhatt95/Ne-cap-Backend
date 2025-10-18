@@ -224,7 +224,7 @@
  * @swagger
  * /api/passenger/{id}:
  *   get:
- *     summary: Get a single passenger by ID (Admin only)
+ *     summary: Get a single passenger by ID (User only)
  *     tags: [Passenger]
  *     security:
  *       - BearerAuth: []
@@ -252,7 +252,7 @@
  *       500:
  *         description: Server error
  *   put:
- *     summary: Update passenger by ID (Admin only)
+ *     summary: Update passenger by ID (User only)
  *     tags: [Passenger]
  *     security:
  *       - BearerAuth: []
