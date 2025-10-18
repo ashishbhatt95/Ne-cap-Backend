@@ -84,13 +84,4 @@ router.put(
   bookingController.cancelBooking
 );
 
-// -------------------------------
-// 🔟 User: Submit review after ride completion
-// -------------------------------
-router.post(
-  "/review/:id",
-  roleAuthorization(["user"]),
-  bookingController.submitReview
-);
-
 module.exports = router;
