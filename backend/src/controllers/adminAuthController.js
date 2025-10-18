@@ -45,14 +45,13 @@ exports.verifyAdminOtpAndLogin = async (req, res) => {
       return res.status(403).json({ success: false, message: "Access denied. Not an admin." });
     }
 
-    // const otpRecord = await Otp.findOne({ mobile }).sort({ createdAt: -1 });
-    // if (!otpRecord || otpRecord.otp !== otp) {
-    //   return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
-    // }
+    const otpRecord = await Otp.findOne({ mobile }).sort({ createdAt: -1 });
 
-    // (TEMP bypass during testing)
-    const otpRecord = "123456";
-    if (otpRecord !== otp) {
+    if (!otpRecord || otpRecord.otp !== otp) {
+      return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
+    }
+
+    if (otpRecord.otp !== otp) {
       return res.status(400).json({ success: false, message: "Invalid OTP" });
     }
 
@@ -71,33 +70,26 @@ exports.verifyAdminOtpAndLogin = async (req, res) => {
   }
 };
 
-// STEP 3: Send OTP for Mobile Number Change
 exports.sendOtpForMobileChange = async (req, res) => {
   try {
     const { newMobile } = req.body;
-    const { id } = req.user; // ✅ comes from roleAuthorization
+    const { id } = req.user;
 
     if (!newMobile) {
-      return res
-        .status(400)
-        .json({ success: false, message: "New mobile number is required" });
+      return res.status(400).json({ success: false, message: "New mobile number is required" });
     }
 
     const existing = await Superadmin.findOne({ mobile: newMobile });
     if (existing) {
-      return res
-        .status(400)
-        .json({ success: false, message: "This mobile number is already in use" });
+      return res.status(400).json({ success: false, message: "This mobile number is already in use" });
     }
 
-    // Static OTP for testing
-    const otp = "123456";
+    const otp = await createAndSendOtp(newMobile);
 
-    // Later: replace with SMS integration
     return res.status(200).json({
       success: true,
       message: `OTP sent successfully to ${newMobile}`,
-      otp, // for testing only
+      otp, // remove in production
     });
   } catch (err) {
     console.error("sendOtpForMobileChange Error:", err.message);
@@ -105,20 +97,53 @@ exports.sendOtpForMobileChange = async (req, res) => {
   }
 };
 
-// STEP 4: Verify OTP and Update Mobile
+
 exports.verifyOtpAndChangeMobile = async (req, res) => {
   try {
     const { newMobile, otp } = req.body;
-    const { id } = req.user; // ✅ from middleware
+    const { id } = req.user;
 
     if (!newMobile || !otp) {
-      return res
-        .status(400)
-        .json({ success: false, message: "New mobile and OTP are required" });
+      return res.status(400).json({ success: false, message: "New mobile and OTP are required" });
     }
 
-    if (otp !== "123456") {
-      return res.status(400).json({ success: false, message: "Invalid OTP" });
+    const otpRecord = await Otp.findOne({ mobile: newMobile }).sort({ createdAt: -1 });
+
+    if (!otpRecord || otpRecord.otp !== otp) {
+      return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
+    }
+
+    const admin = await Superadmin.findById(id);
+    if (!admin) {
+      return res.status(404).json({ success: false, message: "Admin not found" });
+    }
+
+    admin.mobile = newMobile;
+    await admin.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Mobile number updated successfully",
+      newMobile,
+    });
+  } catch (err) {
+    console.error("verifyOtpAndChangeMobile Error:", err.message);
+    return res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+exports.verifyOtpAndChangeMobile = async (req, res) => {
+  try {
+    const { newMobile, otp } = req.body;
+    const { id } = req.user;
+
+    if (!newMobile || !otp) {
+      return res.status(400).json({ success: false, message: "New mobile and OTP are required" });
+    }
+
+    const otpRecord = await Otp.findOne({ mobile: newMobile }).sort({ createdAt: -1 });
+
+    if (!otpRecord || otpRecord.otp !== otp) {
+      return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
     }
 
     const admin = await Superadmin.findById(id);

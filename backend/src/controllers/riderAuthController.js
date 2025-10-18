@@ -20,7 +20,6 @@ exports.sendRiderOtp = async (req, res) => {
 
     // Send OTP via TrueBulkSMS
     const otp = await createAndSendOtp(mobile);
-    console.log(`📱 OTP for rider ${mobile}: ${otp}`);
 
     return res.json({ success: true, message: "OTP sent successfully" });
   } catch (error) {
@@ -39,11 +38,9 @@ exports.verifyRiderOtp = async (req, res) => {
       return res.status(400).json({ success: false, message: "Mobile and OTP required" });
     }
 
-    // TEMP bypass for testing
-    const otpRecord = "123456";
-    // In production: const otpRecord = await Otp.findOne({ mobile }).sort({ createdAt: -1 });
+    const otpRecord = await Otp.findOne({ mobile }).sort({ createdAt: -1 });
 
-    if (otpRecord !== otp) {
+    if (otpRecord.otp !== otp) {
       return res.status(400).json({ success: false, message: "Invalid OTP" });
     }
 

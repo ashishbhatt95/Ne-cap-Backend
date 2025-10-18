@@ -18,7 +18,6 @@ exports.sendPassengerOtp = async (req, res) => {
 
     // Send OTP via TrueBulkSMS
     const otp = await createAndSendOtp(mobile);
-    console.log(`📱 OTP for passenger ${mobile}: ${otp}`);
 
     return res.json({ success: true, message: "OTP sent successfully" });
   } catch (error) {
@@ -27,7 +26,6 @@ exports.sendPassengerOtp = async (req, res) => {
   }
 };
 
-// STEP 2: Verify OTP & Check Registration
 exports.verifyPassengerOtp = async (req, res) => {
   try {
     const { mobile, otp } = req.body;
@@ -35,15 +33,12 @@ exports.verifyPassengerOtp = async (req, res) => {
       return res.status(400).json({ success: false, message: "Mobile and OTP required" });
     }
 
-    // TEMP bypass (for testing)
-    const otpRecord = "123456";
-    // In prod: const otpRecord = await Otp.findOne({ mobile }).sort({ createdAt: -1 });
+    const otpRecord = await Otp.findOne({ mobile }).sort({ createdAt: -1 });
 
-    if (otpRecord !== otp) {
-      return res.status(400).json({ success: false, message: "Invalid OTP" });
+    if (!otpRecord || otpRecord.otp !== otp) {
+      return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
     }
 
-    // Check if passenger exists
     const passenger = await Passenger.findOne({ mobile });
 
     if (!passenger) {
@@ -51,7 +46,7 @@ exports.verifyPassengerOtp = async (req, res) => {
       return res.json({
         success: true,
         isRegister: false,
-        mobile,  // include mobile number
+        mobile,
         message: "First-time user. Please complete registration.",
       });
     }
@@ -59,13 +54,13 @@ exports.verifyPassengerOtp = async (req, res) => {
     // Existing user → generate token
     const token = generatePassengerToken(passenger._id);
 
-    // Clean up OTP after success
+    // Clean up OTP after successful login
     await Otp.deleteMany({ mobile });
 
     return res.json({
       success: true,
       isRegister: true,
-      mobile,  // include mobile number
+      mobile,
       message: "Login successful",
       token,
     });
@@ -74,4 +69,5 @@ exports.verifyPassengerOtp = async (req, res) => {
     return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
+
 

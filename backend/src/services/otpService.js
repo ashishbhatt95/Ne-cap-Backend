@@ -1,41 +1,47 @@
 const axios = require("axios");
 const Otp = require("../models/Otp");
 
-// 🔢 Generate 6-digit OTP
+// 6-digit OTP generator
 const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-async function createAndSendOtp(mobile) {
+/**
+ * Send OTP via TrueBulkSMS
+ * Returns an object: { success: boolean, message: string, logId?: string }
+ */
+exports.createAndSendOtp = async (mobile) => {
+  // Validate mobile
+  if (!/^\d{10}$/.test(mobile)) {
+    return { success: false, message: "Invalid mobile number" };
+  }
+
   const otp = generateOtp();
 
-  // Save OTP in database
-  await Otp.create({ mobile, otp, createdAt: new Date() });
+  // Remove any previous OTPs for this mobile
+  await Otp.deleteMany({ mobile });
 
-  // Message text
-    const msg = `${otp} is your One Time Password (OTP) for verification on NE Cab. Please do not share it with anyone.`
-  // ✅ Payload for TrueBulkSMS API
-  const payload = {
-    key: process.env.TRUEBULKSMS_API_KEY, // from your TrueBulkSMS account
-    campaign: "OTP",
-    routeid: 7, // transactional route, adjust if needed
-    type: "text",
-    contacts: mobile,
-    senderid: process.env.TRUEBULKSMS_SENDERID, // example: SSWAIT
-    msg: msg,
+  // Save new OTP with 5-minute expiry
+  await Otp.create({
+    mobile,
+    otp,
+    createdAt: new Date(),
+    expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
+  });
+
+  const message = `${otp} is your One Time Passcode for registration. SSWAIT`;
+
+  const params = {
+    APIKEY: process.env.TRUEBULKSMS_API_KEY,
+    sender: process.env.TRUEBULKSMS_SENDERID,
+    sendto: `${mobile}`,
+    message,
+    PEID: process.env.TRUEBULKSMS_PEID,
+    templateid: process.env.TRUEBULKSMS_TEMPLATEID,
   };
 
   try {
-    // 📤 Send SMS via TrueBulkSMS
-    const response = await axios.post("https://truebulksms.bi/api/smsapi", null, {
-      params: payload,
-      headers: { "Content-Type": "application/json" },
-    });
-
-    console.log(" TrueBulkSMS Response:", response.data);
+    const response = await axios.get("http://truebulksms.biz/apikey.php", { params });
   } catch (err) {
-    console.error(" SMS sending failed:", err.message);
+    console.error("OTP send error:", err.message);
+    return { success: false, message: "Error sending OTP: " + err.message };
   }
-
-  return otp;
-}
-
-module.exports = { createAndSendOtp };
+};
