@@ -17,7 +17,7 @@ router.post(
 // -------------------------------
 router.get(
   "/",
-  roleAuthorization(["superadmin", "vendor"]),
+  roleAuthorization(["admin", "vendor"]),
   bookingController.getAllBookings
 );
 
@@ -26,7 +26,7 @@ router.get(
 // -------------------------------
 router.get(
   "/:id",
-  roleAuthorization(["user", "rider", "superadmin", "vendor"]),
+  roleAuthorization(["user", "rider", "admin", "vendor"]),
   bookingController.getBookingById
 );
 
@@ -35,7 +35,7 @@ router.get(
 // -------------------------------
 router.get(
   "/candidate-riders/:id",
-  roleAuthorization(["superadmin", "vendor"]),
+  roleAuthorization(["admin", "vendor"]),
   bookingController.getCandidateRiders
 );
 
@@ -44,7 +44,7 @@ router.get(
 // -------------------------------
 router.put(
   "/assign/:id",
-  roleAuthorization(["superadmin", "vendor"]),
+  roleAuthorization(["admin", "vendor"]),
   bookingController.assignRider
 );
 
@@ -53,7 +53,7 @@ router.put(
 // -------------------------------
 router.put(
   "/status/:id",
-  roleAuthorization(["rider", "superadmin", "vendor"]),
+  roleAuthorization(["rider", "admin", "vendor"]),
   bookingController.updateBookingStatus
 );
 
@@ -62,7 +62,7 @@ router.put(
 // -------------------------------
 router.put(
   "/cancel/:id",
-  roleAuthorization(["user", "rider", "superadmin", "vendor"]),
+  roleAuthorization(["user", "rider", "admin", "vendor"]),
   bookingController.cancelBooking
 );
 

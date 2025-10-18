@@ -2,20 +2,18 @@
  * @swagger
  * tags:
  *   - name: Booking
- *     description: Booking management APIs (User, Admin, Rider)
+ *     description: Booking management APIs (User, Admin, Rider, Vendor)
  */
 
 /**
  * -------------------------------
- * Booking APIs
+ * 1️⃣ Create Booking (User)
  * -------------------------------
- */
-
-/**
  * @swagger
  * /api/booking/create:
  *   post:
- *     summary: User creates a new booking
+ *     summary: Create a new booking (User only)
+ *     description: Passenger books a ride after selecting car and trip details.
  *     tags: [Booking]
  *     security:
  *       - BearerAuth: []
@@ -28,91 +26,108 @@
  *             required:
  *               - pickupLocation
  *               - dropLocation
- *               - distance
  *               - pickupDate
  *               - rideEndDate
- *               - maleCount
- *               - femaleCount
- *               - kidsCount
  *               - selectedCar
  *               - acType
  *             properties:
  *               pickupLocation:
  *                 type: string
+ *                 example: "Delhi"
  *               dropLocation:
  *                 type: string
+ *                 example: "Jaipur"
  *               distance:
  *                 type: number
+ *                 example: 280
  *               pickupDate:
  *                 type: string
- *                 format: date
+ *                 format: date-time
+ *                 example: "2025-10-19T09:00:00Z"
  *               rideEndDate:
  *                 type: string
- *                 format: date
+ *                 format: date-time
+ *                 example: "2025-10-21T18:00:00Z"
  *               maleCount:
  *                 type: number
+ *                 example: 2
  *               femaleCount:
  *                 type: number
+ *                 example: 1
  *               kidsCount:
  *                 type: number
+ *                 example: 1
  *               selectedCar:
  *                 type: string
+ *                 description: VehicleCategory ID
+ *                 example: "67121ae4f5b7b8e4c0b2dfc7"
  *               acType:
  *                 type: string
  *                 enum: [AC, Non-AC]
+ *                 example: "AC"
  *               additionalDetails:
  *                 type: string
+ *                 example: "Need a baby seat"
  *     responses:
  *       201:
  *         description: Booking created successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: "Booking created successfully"
+ *               booking:
+ *                 _id: "67122ceaf9b1c4a1234abcde"
+ *                 status: "in-review"
+ *                 pickupLocation: "Delhi"
+ *                 dropLocation: "Jaipur"
+ *                 initialPrice: 4200
  *       400:
- *         description: Validation error
+ *         description: Missing required fields
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
  */
 
 /**
+ * -------------------------------
+ * 2️⃣ Get All Bookings (Admin / Vendor)
+ * -------------------------------
  * @swagger
  * /api/booking:
  *   get:
- *     summary: Get all bookings (Admin)
+ *     summary: Get all bookings
+ *     description: Admin or vendor can fetch all bookings with populated user, rider, and vehicle info.
  *     tags: [Booking]
  *     security:
  *       - BearerAuth: []
  *     responses:
  *       200:
  *         description: List of all bookings
+ *         content:
+ *           application/json:
+ *             example:
+ *               - _id: "67122ceaf9b1c4a1234abcde"
+ *                 passengerId:
+ *                   name: "Ravi Sharma"
+ *                   mobile: "9876543210"
+ *                 selectedCar:
+ *                   name: "Innova Crysta"
+ *                   minPricePerKm: 12
+ *                 status: "in-review"
+ *       500:
+ *         description: Failed to fetch bookings
  */
 
 /**
- * @swagger
- * /api/booking/my:
- *   get:
- *     summary: Get all bookings of logged-in user (User)
- *     tags: [Booking]
- *     security:
- *       - BearerAuth: []
- *     responses:
- *       200:
- *         description: List of user's bookings
- */
-
-/**
- * @swagger
- * /api/booking/assigned:
- *   get:
- *     summary: Get all bookings assigned to logged-in rider (Rider)
- *     tags: [Booking]
- *     security:
- *       - BearerAuth: []
- *     responses:
- *       200:
- *         description: List of assigned bookings
- */
-
-/**
+ * -------------------------------
+ * 3️⃣ Get Booking by ID (Role-based)
+ * -------------------------------
  * @swagger
  * /api/booking/{id}:
  *   get:
- *     summary: Get booking by ID
+ *     summary: Get booking details by ID
+ *     description: Accessible by user (own booking), rider (assigned booking), or admin/vendor.
  *     tags: [Booking]
  *     security:
  *       - BearerAuth: []
@@ -122,18 +137,69 @@
  *         required: true
  *         schema:
  *           type: string
+ *         description: Booking ID
  *     responses:
  *       200:
- *         description: Booking details
+ *         description: Booking details retrieved
+ *         content:
+ *           application/json:
+ *             example:
+ *               _id: "67122ceaf9b1c4a1234abcde"
+ *               pickupLocation: "Delhi"
+ *               dropLocation: "Jaipur"
+ *               status: "rider-assigned"
+ *       403:
+ *         description: Forbidden
  *       404:
  *         description: Booking not found
+ *       500:
+ *         description: Internal server error
  */
 
 /**
+ * -------------------------------
+ * 4️⃣ Get Candidate Riders (Admin / Vendor)
+ * -------------------------------
  * @swagger
- * /api/booking/{id}/assign:
+ * /api/booking/candidate-riders/{id}:
+ *   get:
+ *     summary: Get list of available riders for a booking
+ *     description: Admin/vendor can see which riders are free for a booking window.
+ *     tags: [Booking]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Booking ID
+ *     responses:
+ *       200:
+ *         description: List of available riders
+ *         content:
+ *           application/json:
+ *             example:
+ *               - _id: "67123abc99e31e8e9b5b1234"
+ *                 name: "Amit Singh"
+ *                 mobile: "9876500012"
+ *                 isApproved: true
+ *       404:
+ *         description: Booking not found
+ *       500:
+ *         description: Internal server error
+ */
+
+/**
+ * -------------------------------
+ * 5️⃣ Assign Rider (Admin / Vendor)
+ * -------------------------------
+ * @swagger
+ * /api/booking/assign/{id}:
  *   put:
- *     summary: Admin assigns a rider to booking
+ *     summary: Assign rider manually to a booking
+ *     description: Admin/vendor assigns a specific rider to a booking with optional final price update.
  *     tags: [Booking]
  *     security:
  *       - BearerAuth: []
@@ -149,72 +215,36 @@
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - riderId
+ *             required: [riderId]
  *             properties:
  *               riderId:
  *                 type: string
+ *                 example: "6711d9f0a7a0cba3e8b12345"
  *               finalPrice:
  *                 type: number
+ *                 example: 5500
  *     responses:
  *       200:
  *         description: Rider assigned successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: "Rider assigned successfully"
+ *       404:
+ *         description: Booking not found
+ *       500:
+ *         description: Failed to assign rider
  */
 
 /**
+ * -------------------------------
+ * 6️⃣ Update Booking Status (Rider / Admin / Vendor)
+ * -------------------------------
  * @swagger
- * /api/booking/{id}/candidate-riders:
- *   get:
- *     summary: Get available riders for a booking (Admin)
- *     tags: [Booking]
- *     security:
- *       - BearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: List of candidate riders
- */
-
-/**
- * @swagger
- * /api/booking/{id}/price:
- *   put:
- *     summary: Update final price before ride starts (Admin)
- *     tags: [Booking]
- *     security:
- *       - BearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - finalPrice
- *             properties:
- *               finalPrice:
- *                 type: number
- *     responses:
- *       200:
- *         description: Booking price updated
- */
-
-/**
- * @swagger
- * /api/booking/{id}/status:
+ * /api/booking/status/{id}:
  *   put:
  *     summary: Update booking status
+ *     description: Rider, admin, or vendor updates the booking’s current status.
  *     tags: [Booking]
  *     security:
  *       - BearerAuth: []
@@ -230,22 +260,30 @@
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - status
+ *             required: [status]
  *             properties:
  *               status:
  *                 type: string
- *                 enum: [in-review, in-process, rider-assigned, completed, cancelled]
+ *                 enum: [rider-assigned, in-process, completed, cancelled]
+ *                 example: "in-process"
  *     responses:
  *       200:
- *         description: Booking status updated successfully
+ *         description: Booking status updated
+ *       404:
+ *         description: Booking not found
+ *       500:
+ *         description: Internal server error
  */
 
 /**
+ * -------------------------------
+ * 7️⃣ Cancel Booking (All Roles)
+ * -------------------------------
  * @swagger
- * /api/booking/{id}/cancel:
+ * /api/booking/cancel/{id}:
  *   put:
- *     summary: Cancel booking
+ *     summary: Cancel a booking
+ *     description: Booking can be cancelled by user, rider, or admin depending on rules.
  *     tags: [Booking]
  *     security:
  *       - BearerAuth: []
@@ -261,27 +299,37 @@
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - role
- *               - reason
+ *             required: [role]
  *             properties:
  *               role:
  *                 type: string
  *                 enum: [user, rider, superadmin, vendor]
+ *                 example: "user"
  *               reason:
  *                 type: string
+ *                 example: "Changed travel plan"
  *     responses:
  *       200:
- *         description: Booking cancelled successfully
+ *         description: Booking cancelled
  *       400:
- *         description: Booking already cancelled or completed
+ *         description: Already cancelled or completed
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Booking not found
+ *       500:
+ *         description: Internal server error
  */
 
 /**
+ * -------------------------------
+ * 8️⃣ Submit Review (User)
+ * -------------------------------
  * @swagger
- * /api/booking/{id}/review:
+ * /api/booking/review/{id}:
  *   post:
- *     summary: Submit rating/review after ride completion (User)
+ *     summary: Submit review and rating after ride completion
+ *     description: Passenger gives feedback on the completed ride.
  *     tags: [Booking]
  *     security:
  *       - BearerAuth: []
@@ -297,55 +345,21 @@
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - rating
- *               - comment
+ *             required: [rating]
  *             properties:
  *               rating:
  *                 type: number
- *                 minimum: 1
- *                 maximum: 5
+ *                 example: 5
  *               comment:
  *                 type: string
+ *                 example: "Very smooth and comfortable ride!"
  *     responses:
  *       200:
  *         description: Review submitted successfully
- */
-
-/**
- * @swagger
- * /api/booking/{id}/notifications:
- *   get:
- *     summary: Get all notifications for a booking
- *     tags: [Booking]
- *     security:
- *       - BearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: List of notifications related to the booking
- */
-
-/**
- * @swagger
- * /api/booking/{id}/history:
- *   get:
- *     summary: Get booking event history
- *     tags: [Booking]
- *     security:
- *       - BearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Booking history events
+ *       400:
+ *         description: Ride not completed yet
+ *       404:
+ *         description: Booking not found
+ *       500:
+ *         description: Internal server error
  */

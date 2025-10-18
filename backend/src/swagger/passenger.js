@@ -26,7 +26,7 @@
  *           example: "john@example.com"
  *         mobile:
  *           type: string
- *           example: "+911234567890"
+ *           example: "1234567890"
  *         dateOfBirth:
  *           type: string
  *           format: date
@@ -60,7 +60,7 @@
  *             properties:
  *               mobile:
  *                 type: string
- *                 example: "+911234567890"
+ *                 example: "1234567890"
  *     responses:
  *       200:
  *         description: OTP sent successfully
@@ -96,7 +96,7 @@
  *             properties:
  *               mobile:
  *                 type: string
- *                 example: "+911234567890"
+ *                 example: "1234567890"
  *               otp:
  *                 type: string
  *                 example: "123456"
@@ -123,6 +123,71 @@
  *         description: Invalid OTP or missing fields
  *       500:
  *         description: Server error
+ */
+
+/**
+ * -------------------------------
+ * PASSENGER REGISTRATION (PUBLIC)
+ * -------------------------------
+ */
+
+/**
+ * @swagger
+ * /api/passenger/register:
+ *   post:
+ *     summary: Register a new passenger (no OTP)
+ *     description: Used after OTP verification if the passenger is registering for the first time.
+ *     tags: [Passenger]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - dateOfBirth
+ *               - mobile
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Ravi Sharma"
+ *               email:
+ *                 type: string
+ *                 example: "ravi@example.com"
+ *               dateOfBirth:
+ *                 type: string
+ *                 format: date
+ *                 example: "1998-05-22"
+ *               mobile:
+ *                 type: string
+ *                 example: "9876543210"
+ *     responses:
+ *       201:
+ *         description: Passenger registered successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: "Passenger registered successfully"
+ *               token: "jwt-token-here"
+ *               data:
+ *                 id: "6711cfd0a5f16e01c4b2e9a9"
+ *                 passengerId: "ABC1234"
+ *                 name: "Ravi Sharma"
+ *                 email: "ravi@example.com"
+ *                 mobile: "9876543210"
+ *                 role: "user"
+ *       400:
+ *         description: Missing fields or mobile already registered
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: false
+ *               message: "Mobile number already registered"
+ *       500:
+ *         description: Internal server error
  */
 
 /**

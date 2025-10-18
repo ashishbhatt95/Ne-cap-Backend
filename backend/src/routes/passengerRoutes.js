@@ -5,6 +5,7 @@ const {
   getPassengerById,
   updatePassenger,
   getLeaderboard,
+  registerPassenger,
   getAllBuyers,
   deletePassenger,
 } = require("../controllers/passengerController");
@@ -15,6 +16,8 @@ const passengerAuth = require("../controllers/passengerAuthController");
 
 router.post("/send-otp", passengerAuth.sendPassengerOtp);
 router.post("/verify-otp", passengerAuth.verifyPassengerOtp);
+router.post("/register", registerPassenger);
+
 
 // Passenger CRUD Routes (protected - admin only)
 router.get("/leaderboard", roleAuthorization(["admin"]), getLeaderboard);
