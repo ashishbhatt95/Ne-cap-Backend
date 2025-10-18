@@ -78,10 +78,8 @@
  * @swagger
  * /api/vehicle-category:
  *   get:
- *     summary: Get all vehicle categories (Admin, Vendor)
+ *     summary: Get all vehicle categories
  *     tags: [VehicleCategory]
- *     security:
- *       - BearerAuth: []
  *     responses:
  *       200:
  *         description: List of vehicle categories

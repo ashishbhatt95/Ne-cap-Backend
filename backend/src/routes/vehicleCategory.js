@@ -13,7 +13,7 @@ router.post(
 );
 
 // Get All Vehicle Categories (Admin, Vendor)
-router.get("/", roleAuthorization(["admin", "vendor"]), vehicleController.getAllCategories);
+router.get("/", vehicleController.getAllCategories);
 
 // Get Vehicle Category by ID (Admin, Vendor)
 router.get("/:id", roleAuthorization(["admin", "vendor"]), vehicleController.getCategoryById);
