@@ -13,11 +13,11 @@ router.post(
 );
 
 // -------------------------------
-// 2️⃣ Admin / Vendor: Get all bookings
+// 2️⃣ Admin: Get all bookings
 // -------------------------------
 router.get(
   "/",
-  roleAuthorization(["admin", "vendor"]),
+  roleAuthorization(["admin"]),
   bookingController.getAllBookings
 );
 
@@ -26,30 +26,30 @@ router.get(
 // -------------------------------
 router.get(
   "/:id",
-  roleAuthorization(["user", "rider", "admin", "vendor"]),
+  roleAuthorization(["user", "rider", "admin"]),
   bookingController.getBookingById
 );
 
 // -------------------------------
-// 4️⃣ Admin: Get ALL available riders (no pre-filtering)
+// 4️⃣ Admin: Get ALL available riders
 // -------------------------------
 router.get(
   "/candidate-riders/:id",
-  roleAuthorization(["admin", "vendor"]),
+  roleAuthorization(["admin"]),
   bookingController.getCandidateRiders
 );
 
 // -------------------------------
-// 5️⃣ Admin / Vendor: Send offer to multiple riders
+// 5️⃣ Admin: Send offer to multiple riders
 // -------------------------------
 router.put(
   "/assign/:id",
-  roleAuthorization(["admin", "vendor"]),
+  roleAuthorization(["admin"]),
   bookingController.assignRider
 );
 
 // -------------------------------
-// 6️⃣ Rider: Accept booking offer (First come, first served)
+// 6️⃣ Rider: Accept booking offer
 // -------------------------------
 router.put(
   "/accept/:id",
@@ -67,20 +67,20 @@ router.put(
 );
 
 // -------------------------------
-// 8️⃣ Rider / Admin / Vendor: Update booking status
+// 8️⃣ Rider / Admin: Update booking status
 // -------------------------------
 router.put(
   "/status/:id",
-  roleAuthorization(["rider", "admin", "vendor"]),
+  roleAuthorization(["rider", "admin"]),
   bookingController.updateBookingStatus
 );
 
 // -------------------------------
-// 9️⃣ User / Rider / Admin / Vendor: Cancel booking
+// 9️⃣ User / Rider / Admin: Cancel booking
 // -------------------------------
 router.put(
   "/cancel/:id",
-  roleAuthorization(["user", "rider", "admin", "vendor"]),
+  roleAuthorization(["user", "rider", "admin"]),
   bookingController.cancelBooking
 );
 

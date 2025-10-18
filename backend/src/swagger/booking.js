@@ -2,7 +2,7 @@
  * @swagger
  * tags:
  *   - name: Booking
- *     description: Booking management APIs (User, Admin, Rider, Vendor)
+ *     description: Booking management APIs (User, Admin, Rider)
  */
 
 /**
@@ -74,14 +74,14 @@
 
 /**
  * -------------------------------
- * 2️⃣ Get all bookings (Admin / Vendor)
+ * 2️⃣ Get all bookings (Admin)
  * -------------------------------
  */
 /**
  * @swagger
  * /api/booking/:
  *   get:
- *     summary: Get all bookings (Admin / Vendor)
+ *     summary: Get all bookings (Admin only)
  *     tags: [Booking]
  *     security:
  *       - BearerAuth: []
@@ -103,7 +103,7 @@
  * @swagger
  * /api/booking/{id}:
  *   get:
- *     summary: Get booking details by ID (User, Rider, Admin, Vendor)
+ *     summary: Get booking details by ID (User, Rider, Admin)
  *     tags: [Booking]
  *     security:
  *       - BearerAuth: []
@@ -125,14 +125,14 @@
 
 /**
  * -------------------------------
- * 4️⃣ Get candidate riders for booking (Admin / Vendor)
+ * 4️⃣ Get candidate riders for booking (Admin)
  * -------------------------------
  */
 /**
  * @swagger
  * /api/booking/candidate-riders/{id}:
  *   get:
- *     summary: Get candidate riders for a booking (Admin / Vendor)
+ *     summary: Get candidate riders for a booking (Admin only)
  *     tags: [Booking]
  *     security:
  *       - BearerAuth: []
@@ -154,14 +154,14 @@
 
 /**
  * -------------------------------
- * 5️⃣ Assign booking to riders (Admin / Vendor)
+ * 5️⃣ Assign booking to riders (Admin)
  * -------------------------------
  */
 /**
  * @swagger
  * /api/booking/assign/{id}:
  *   put:
- *     summary: Send booking offer to multiple riders (Admin / Vendor)
+ *     summary: Send booking offer to multiple riders (Admin only)
  *     tags: [Booking]
  *     security:
  *       - BearerAuth: []
@@ -261,14 +261,14 @@
 
 /**
  * -------------------------------
- * 8️⃣ Update booking status (Rider / Admin / Vendor)
+ * 8️⃣ Update booking status (Rider / Admin)
  * -------------------------------
  */
 /**
  * @swagger
  * /api/booking/status/{id}:
  *   put:
- *     summary: Update booking status (Rider / Admin / Vendor)
+ *     summary: Update booking status (Rider / Admin)
  *     tags: [Booking]
  *     security:
  *       - BearerAuth: []
@@ -302,7 +302,7 @@
 
 /**
  * -------------------------------
- * 9️⃣ Cancel booking (User / Rider / Admin / Vendor)
+ * 9️⃣ Cancel booking (User / Rider / Admin)
  * -------------------------------
  */
 /**
@@ -385,3 +385,132 @@
  *         description: Booking not found
  */
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Booking:
+ *       type: object
+ *       required:
+ *         - passengerId
+ *         - pickupLocation
+ *         - dropLocation
+ *         - pickupDate
+ *         - rideEndDate
+ *         - selectedCar
+ *         - acType
+ *         - initialPrice
+ *         - status
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: Booking ID
+ *         passengerId:
+ *           type: string
+ *           description: Reference to Passenger
+ *         pickupLocation:
+ *           type: string
+ *         dropLocation:
+ *           type: string
+ *         distance:
+ *           type: number
+ *         pickupDate:
+ *           type: string
+ *           format: date-time
+ *         rideEndDate:
+ *           type: string
+ *           format: date-time
+ *         journeyDays:
+ *           type: number
+ *         maleCount:
+ *           type: number
+ *         femaleCount:
+ *           type: number
+ *         kidsCount:
+ *           type: number
+ *         totalPassengers:
+ *           type: number
+ *         selectedCar:
+ *           type: string
+ *           description: Reference to VehicleCategory
+ *         acType:
+ *           type: string
+ *           enum: [AC, Non-AC, Both]
+ *         riderId:
+ *           type: string
+ *           description: Reference to Rider
+ *         initialPrice:
+ *           type: number
+ *         finalPrice:
+ *           type: number
+ *         status:
+ *           type: string
+ *           enum: [in-review, rider-offer-sent, rider-assigned, in-process, completed, cancelled]
+ *         cancelledBy:
+ *           type: string
+ *           enum: [user, rider, admin]
+ *         cancelReason:
+ *           type: string
+ *         cancelledAt:
+ *           type: string
+ *           format: date-time
+ *         additionalDetails:
+ *           type: string
+ *         acceptedAt:
+ *           type: string
+ *           format: date-time
+ *         offeredRiders:
+ *           type: array
+ *           items:
+ *             type: string
+ *             description: Rider IDs who were offered this booking
+ *         history:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               event:
+ *                 type: string
+ *               role:
+ *                 type: string
+ *                 enum: [user, rider, admin, system]
+ *               details:
+ *                 type: string
+ *               timestamp:
+ *                 type: string
+ *                 format: date-time
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *       example:
+ *         _id: "64f2d1a1c2a4e5b3f1234567"
+ *         passengerId: "64f2d0f1b1b3e5a2c1234567"
+ *         pickupLocation: "New Delhi"
+ *         dropLocation: "Gurugram"
+ *         distance: 30
+ *         pickupDate: "2025-10-20T10:00:00Z"
+ *         rideEndDate: "2025-10-20T12:00:00Z"
+ *         journeyDays: 1
+ *         maleCount: 1
+ *         femaleCount: 2
+ *         kidsCount: 1
+ *         totalPassengers: 4
+ *         selectedCar: "64f2d0a1b1b3e5a2c1234567"
+ *         acType: "AC"
+ *         riderId: null
+ *         initialPrice: 900
+ *         finalPrice: null
+ *         status: "in-review"
+ *         cancelledBy: null
+ *         cancelReason: null
+ *         cancelledAt: null
+ *         additionalDetails: "Need baby seat"
+ *         acceptedAt: null
+ *         offeredRiders: []
+ *         history: []
+ *         createdAt: "2025-10-18T12:00:00Z"
+ *         updatedAt: "2025-10-18T12:00:00Z"
+ */
